@@ -51,6 +51,9 @@ repos:
   rev: 0.60.2
   hooks:
     - id: pyrefly-check
+      additional_dependencies:
+        - pytest
+        - langgraph>=1.1.6
 
 - repo: https://github.com/opensource-nepal/commitlint
   rev: v1.13.3
