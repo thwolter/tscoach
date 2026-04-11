@@ -198,14 +198,14 @@ async def behaviour_analysis(state: TrainingState) -> dict:
     }
 
 
-async def control_node(state: TrainingState) -> dict:
+async def decide_phase(state: TrainingState) -> dict:
     """Decide the next conversation phase and whether training should stop."""
     if not state.caller_profile:
         raise ValueError("Caller profile is not set")
 
     formatted_history = await format_history(state)
 
-    decision_msg = PHASE_DECISION_PROMPT.format(
+    decision_msg = PHASE_DECISION.format(
         scenario_description=state.scenario.description,
         language=state.config.language,
         emotional_state=state.caller_profile.emotional_state,
@@ -240,42 +240,7 @@ async def control_node(state: TrainingState) -> dict:
     }
 
 
-async def continue_conversation(state: TrainingState) -> Literal["continue", "finish"]:
-    """Return whether the graph should continue or finish."""
-    return "finish" if state.finished else "continue"
-
-
-async def per_turn_feedback_node(state: TrainingState) -> dict:
-    """Generate coaching feedback for the most recent evaluated turn."""
-    if not state.evaluations:
-        return {}
-
-    latest_evaluation = state.evaluations[-1]
-    feedback_msg = TURN_FEEDBACK_PROMPT.format(
-        scenario_description=state.scenario.description,
-        language=state.config.language,
-        turn_index=latest_evaluation.turn_index,
-        empathy=latest_evaluation.empathy,
-        question_quality=latest_evaluation.question_quality,
-        advice_given="yes" if latest_evaluation.advice_given else "no",
-        notes=latest_evaluation.notes or "",
-    )
-
-    messages = [
-        SystemMessage(
-            content=(
-                "You are a trainer for telephone counselling. "
-                + language_constraint(state.config.language)
-            )
-        ),
-        HumanMessage(content=feedback_msg),
-    ]
-
-    response = await llm.ainvoke(messages)
-    return {"per_turn_feedback": [response.content]}
-
-
-async def route_after_control(
+async def route_after_decide_phase(
     state: TrainingState,
 ) -> Literal["per_turn_feedback", "continue", "final_feedback", "end"]:
     """Route flow after control based on feedback mode and completion state."""
@@ -301,7 +266,37 @@ async def route_after_per_turn_feedback(
     return "end"
 
 
-async def feedback_node(state: TrainingState) -> dict:
+async def per_turn_feedback(state: TrainingState) -> dict:
+    """Generate coaching feedback for the most recent evaluated turn."""
+    if not state.evaluations:
+        return {}
+
+    latest_evaluation = state.evaluations[-1]
+    feedback_msg = TURN_FEEDBACK.format(
+        scenario_description=state.scenario.description,
+        language=state.config.language,
+        turn_index=latest_evaluation.turn_index,
+        empathy=latest_evaluation.empathy,
+        question_quality=latest_evaluation.question_quality,
+        advice_given="yes" if latest_evaluation.advice_given else "no",
+        notes=latest_evaluation.notes or "",
+    )
+
+    messages = [
+        SystemMessage(
+            content=(
+                "You are a trainer for telephone counselling. "
+                + language_constraint(state.config.language)
+            )
+        ),
+        HumanMessage(content=feedback_msg),
+    ]
+
+    response = await llm.ainvoke(messages)
+    return {"per_turn_feedback": [response.content]}
+
+
+async def final_feedback(state: TrainingState) -> dict:
     """Generate final feedback from aggregate metrics and chat history."""
     if not state.aggregates:
         raise ValueError("Aggregates are not set")
