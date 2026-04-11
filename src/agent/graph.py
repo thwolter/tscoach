@@ -1,54 +1,58 @@
-"""LangGraph single-node graph template.
+"""Graph of the agent."""
 
-Returns a predefined response. Replace logic and configuration as needed.
-"""
-
-from __future__ import annotations
-
-from dataclasses import dataclass
-from typing import Any, Dict
-
+from langgraph.constants import END, START
 from langgraph.graph import StateGraph
-from langgraph.runtime import Runtime
-from typing_extensions import TypedDict
 
-
-class Context(TypedDict):
-    """Context parameters for the agent.
-
-    Set these when creating assistants OR when invoking the graph.
-    See: https://langchain-ai.github.io/langgraph/cloud/how-tos/configuration_cloud/
-    """
-
-    my_configurable_param: str
-
-
-@dataclass
-class State:
-    """Input state for the agent.
-
-    Defines the initial structure of incoming data.
-    See: https://langchain-ai.github.io/langgraph/concepts/low_level/#state
-    """
-
-    changeme: str = "example"
-
-
-async def call_model(state: State, runtime: Runtime[Context]) -> Dict[str, Any]:
-    """Process input and returns output.
-
-    Can use runtime context to alter behavior.
-    """
-    return {
-        "changeme": "output from call_model. "
-        f"Configured with {(runtime.context or {}).get('my_configurable_param')}"
-    }
-
-
-# Define the graph
-graph = (
-    StateGraph(State, context_schema=Context)
-    .add_node(call_model)
-    .add_edge("__start__", "call_model")
-    .compile(name="New Graph")
+from agent.nodes import (
+    await_learner_input,
+    behaviour_analysis,
+    caller_simulation,
+    control_node,
+    feedback_node,
+    per_turn_feedback_node,
+    route_after_control,
+    route_after_per_turn_feedback,
+    scenario_setup,
 )
+from agent.state import TrainingInputState, TrainingState
+
+builder = StateGraph(
+    TrainingState, input_schema=TrainingInputState, output_schema=TrainingState
+)
+
+builder.add_node("scenario_setup", scenario_setup)
+builder.add_node("caller_simulation", caller_simulation)
+builder.add_node("learner_input", await_learner_input)
+builder.add_node("behaviour_analysis", behaviour_analysis)
+builder.add_node("control_node", control_node)
+builder.add_node("per_turn_feedback_node", per_turn_feedback_node)
+builder.add_node("feedback_node", feedback_node)
+
+
+builder.add_edge(START, "scenario_setup")
+builder.add_edge("scenario_setup", "caller_simulation")
+builder.add_edge("caller_simulation", "learner_input")
+builder.add_edge("learner_input", "behaviour_analysis")
+builder.add_edge("behaviour_analysis", "control_node")
+builder.add_conditional_edges(
+    "control_node",
+    route_after_control,
+    {
+        "per_turn_feedback": "per_turn_feedback_node",
+        "continue": "caller_simulation",
+        "final_feedback": "feedback_node",
+        "end": END,
+    },
+)
+builder.add_conditional_edges(
+    "per_turn_feedback_node",
+    route_after_per_turn_feedback,
+    {
+        "continue": "caller_simulation",
+        "final_feedback": "feedback_node",
+        "end": END,
+    },
+)
+builder.add_edge("feedback_node", END)
+
+graph = builder.compile()
