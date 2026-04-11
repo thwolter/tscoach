@@ -116,7 +116,7 @@ OUTPUT FORMAT
 """
 
 
-HUMAN_INPUT_EVALUATION = """
+LEARNER_EVALUATION = """
 Evaluate the LAST learner message in the conversation.
 
 TARGET LANGUAGE FOR NATURAL-LANGUAGE FIELDS:
@@ -144,7 +144,7 @@ Return your evaluation using the required structured format.
 """
 
 
-PHASE_DECISION_PROMPT = """
+PHASE_DECISION = """
 SCENARIO:
 {scenario_description}
 
@@ -201,7 +201,7 @@ Keep it concise (max 150 words).
 """
 
 
-TURN_FEEDBACK_PROMPT = """
+TURN_FEEDBACK = """
 SCENARIO:
 {scenario_description}
 

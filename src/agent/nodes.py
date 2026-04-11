@@ -8,11 +8,11 @@ from langchain_core.output_parsers import StrOutputParser
 from langgraph.types import interrupt
 
 from agent.prompts import (
-    CALLER_PROMPT,
+    CALLER_SIMULATION,
     EVALUATION_SUMMARY,
-    HUMAN_INPUT_EVALUATION,
-    PHASE_DECISION_PROMPT,
-    TURN_FEEDBACK_PROMPT,
+    LEARNER_EVALUATION,
+    PHASE_DECISION,
+    TURN_FEEDBACK,
 )
 from agent.state import (
     Aggregates,
@@ -169,7 +169,7 @@ async def behaviour_analysis(state: TrainingState) -> dict:
 
     formatted_history = await format_history(state)
 
-    evaluation_msg = HUMAN_INPUT_EVALUATION.format(
+    evaluation_msg = LEARNER_EVALUATION.format(
         scenario_description=state.scenario.description,
         language=state.config.language,
         phase=state.phase,
