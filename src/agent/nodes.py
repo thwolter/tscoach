@@ -72,15 +72,18 @@ async def caller_simulation(state: TrainingState) -> dict:
 
     formatted_history = await format_history(state)
 
-    caller_msg = CALLER_PROMPT.format(
+    simulation = CALLER_SIMULATION.format(
         scenario_description=state.scenario.description,
         language=state.config.language,
-        difficulty=state.scenario.difficulty,
         emotional_state=state.caller_profile.emotional_state,
+        complexity=state.caller_profile.complexity,
         volatility=state.caller_profile.volatility,
         cooperativeness=state.caller_profile.cooperativeness,
         formatted_history=formatted_history,
     )
+
+    if not formatted_history.strip():
+        simulation += "\n\nIMPORTANT: This is the first message. The first word MUST be a greeting."
 
     messages = [
         SystemMessage(
@@ -89,7 +92,7 @@ async def caller_simulation(state: TrainingState) -> dict:
                 + language_constraint(state.config.language)
             )
         ),
-        HumanMessage(content=caller_msg),
+        HumanMessage(content=simulation),
     ]
 
     response = await llm.ainvoke(messages)
