@@ -1,5 +1,7 @@
 """Provide helper functions for training state formatting and profile setup."""
 
+import random
+
 from agent.state import CallerProfile, TrainingState
 
 
@@ -21,23 +23,37 @@ def language_constraint(language: str) -> str:
     )
 
 
-def get_profile(difficulty: int):
-    """Return a caller profile for the given difficulty level."""
-    if difficulty <= 2:
-        return CallerProfile(
-            emotional_state="mild distress",
-            volatility=0.2,
-            cooperativeness=0.8,
-        )
-    elif difficulty == 3:
-        return CallerProfile(
-            emotional_state="moderate distress",
-            volatility=0.5,
-            cooperativeness=0.5,
-        )
-    else:
-        return CallerProfile(
-            emotional_state="severe distress",
-            volatility=0.8,
-            cooperativeness=0.3,
-        )
+def get_profile(difficulty: int) -> CallerProfile:
+    """Return a caller profile for the given learner difficulty."""
+    # --- Normalise difficulty (1–10 → 0–1)
+    d = max(1, min(10, difficulty))
+    x = (d - 1) / 9  # 0.0 – 1.0
+
+    # --- Core behavioural drivers (smooth mapping)
+    base_volatility = 0.2 + 0.6 * x  # 0.2 → 0.8
+    base_cooperativeness = 0.85 - 0.5 * x  # 0.85 → 0.35
+    base_complexity = 1 + 4 * x  # 1 → 5
+
+    # --- Add realistic noise (Gaussian)
+    volatility = min(1.0, max(0.0, random.gauss(base_volatility, 0.1)))
+    cooperativeness = min(1.0, max(0.0, random.gauss(base_cooperativeness, 0.12)))
+    complexity = int(round(min(5, max(1, random.gauss(base_complexity, 0.8)))))
+
+    # --- Emotional state (weakly coupled to difficulty)
+    emotional_state = random.choices(
+        ["calm", "mild distress", "moderate distress", "severe distress"],
+        weights=[
+            max(0.1, 1 - x),  # calm decreases with difficulty
+            0.4,
+            0.3 + 0.2 * x,  # moderate increases slightly
+            0.1 + 0.3 * x,  # severe increases but not dominant
+        ],
+        k=1,
+    )[0]
+
+    return CallerProfile(
+        emotional_state=emotional_state,
+        complexity=complexity,
+        volatility=round(volatility, 2),
+        cooperativeness=round(cooperativeness, 2),
+    )

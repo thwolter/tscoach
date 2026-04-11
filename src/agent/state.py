@@ -13,16 +13,18 @@ class Scenario(BaseModel):
     """Scenario description."""
 
     category: str
-    difficulty: int
+    difficulty: int = Field(..., ge=1, le=10)
     description: str | None = None
 
 
 class CallerProfile(BaseModel):
     """Profile of the caller."""
 
-    emotional_state: str  # e.g. "distressed", "withdrawn"
-    volatility: float  # how quickly emotions change (0–1)
-    cooperativeness: float  # willingness to engage (0–1)
+    emotional_state: str
+    complexity: int
+    volatility: float
+    cooperativeness: float
+
 
 
 class TurnEvaluation(BaseModel):
