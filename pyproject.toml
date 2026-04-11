@@ -12,6 +12,7 @@ dependencies = [
     "langchain>=1.2.15",
     "langchain-openai>=1.1.12",
     "langgraph>=1.1.6",
+    "langgraph-api>=0.7.100",
     "python-dotenv>=1.0.1",
 ]
 
