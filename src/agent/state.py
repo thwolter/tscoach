@@ -26,7 +26,6 @@ class CallerProfile(BaseModel):
     cooperativeness: float
 
 
-
 class TurnEvaluation(BaseModel):
     """Evaluation of the learner's response to the caller."""
 
