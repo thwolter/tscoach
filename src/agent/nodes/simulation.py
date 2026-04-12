@@ -8,7 +8,7 @@ from agent.llm import llm
 from agent.prompts import CALLER_SIMULATION, PHASE_DECISION, PROFILE_UPDATE
 from agent.schemas import CallerProfile, CallerProfileUpdate, PhaseDecision
 from agent.state import TrainingState
-from agent.utils import format_history, language_constraint
+from agent.utils import format_conversation_history, language_constraint
 
 _EMOTIONAL_LEVELS = ["calm", "mild distress", "moderate distress", "severe distress"]
 
@@ -48,7 +48,7 @@ async def caller_simulation(state: TrainingState) -> dict:
     if not state.scenario:
         raise ValueError("Scenario is not set")
 
-    formatted_history = await format_history(state)
+    formatted_history = await format_conversation_history(state)
 
     if not formatted_history.strip():
         formatted_history = "\n\nIMPORTANT: This is the first message. The first word MUST be a greeting."
@@ -181,7 +181,7 @@ async def decide_phase(state: TrainingState) -> dict:
     if not state.scenario:
         raise ValueError("Scenario is not set")
 
-    formatted_history = await format_history(state)
+    formatted_history = await format_conversation_history(state)
 
     decision_msg = PHASE_DECISION.format(
         scenario_description=state.scenario.description,

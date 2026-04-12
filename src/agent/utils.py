@@ -2,19 +2,21 @@
 
 import random
 
+from langchain_core.messages import AIMessage, HumanMessage, get_buffer_string
+
 from agent.schemas import CallerProfile
 from agent.state import TrainingState
 
 
-async def format_history(state: TrainingState) -> str:
+async def format_conversation_history(state: TrainingState) -> str:
     """Format conversation history starting from the first caller message."""
-
     messages = state.messages
 
     # find first caller (AIMessage with name="caller")
     start_idx = next(
         (
-            i for i, msg in enumerate(messages)
+            i
+            for i, msg in enumerate(messages)
             if isinstance(msg, AIMessage) and getattr(msg, "name", None) == "caller"
         ),
         None,
@@ -35,6 +37,7 @@ async def format_history(state: TrainingState) -> str:
         human_prefix="Learner",
         ai_prefix="Caller",
     )
+
 
 def language_constraint(language: str) -> str:
     """Build the language constraint instruction string."""

@@ -8,7 +8,7 @@ from agent.llm import llm
 from agent.prompts import EVALUATION_SUMMARY, LEARNER_EVALUATION, TURN_FEEDBACK
 from agent.schemas import Aggregates, TurnEvaluation
 from agent.state import TrainingState
-from agent.utils import format_history, language_constraint
+from agent.utils import format_conversation_history, language_constraint
 
 
 async def aggregate_evaluation(
@@ -57,7 +57,7 @@ async def behaviour_analysis(state: TrainingState) -> dict:
     if last_user_message.type != "human":
         raise ValueError("Last message is not from the user")
 
-    formatted_history = await format_history(state)
+    formatted_history = await format_conversation_history(state)
 
     if not state.scenario:
         raise ValueError("Scenario is not set")
@@ -127,7 +127,7 @@ async def final_feedback(state: TrainingState) -> dict:
     if not state.scenario:
         raise ValueError("Scenario is not set")
 
-    formatted_history = await format_history(state)
+    formatted_history = await format_conversation_history(state)
 
     feedback_msg = EVALUATION_SUMMARY.format(
         scenario_description=state.scenario.description,
