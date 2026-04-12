@@ -16,6 +16,7 @@ from agent.nodes import (
     route_after_onboarding,
     route_after_per_turn_feedback,
     scenario_setup,
+    update_caller_profile,
 )
 from agent.state import TrainingState
 
@@ -25,6 +26,7 @@ builder.add_node("onboarding", onboarding)
 builder.add_node("scenario_setup", scenario_setup)
 builder.add_node("caller_simulation", caller_simulation)
 builder.add_node("behaviour_analysis", behaviour_analysis)
+builder.add_node("update_caller_profile", update_caller_profile)
 builder.add_node("decide_phase", decide_phase)
 builder.add_node("per_turn_feedback", per_turn_feedback)
 builder.add_node("final_feedback", final_feedback)
@@ -49,7 +51,8 @@ builder.add_conditional_edges(
 )
 builder.add_edge("scenario_setup", "caller_simulation")
 builder.add_edge("caller_simulation", END)
-builder.add_edge("behaviour_analysis", "decide_phase")
+builder.add_edge("behaviour_analysis", "update_caller_profile")
+builder.add_edge("update_caller_profile", "decide_phase")
 builder.add_conditional_edges(
     "decide_phase",
     route_after_decide_phase,
