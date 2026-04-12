@@ -9,6 +9,8 @@ from pydantic import BaseModel, Field
 
 
 class OnboardingSetup(BaseModel):
+    """Setup for the onboarding process."""
+
     category: str | None = Field(
         description="Scenario topic or context explicitly provided by the user"
     )
@@ -17,14 +19,15 @@ class OnboardingSetup(BaseModel):
     )
     language: str | None = Field(
         description="Language for the conversation. Inferred from the user prompt if not stated explicitly.",
-        max_length=2
+        max_length=2,
     )
     feedback_mode: Literal["none", "per_turn", "final", "both"] | None = Field(
         description="Feedback mode: none, per_turn, final, or both; only if explicitly stated"
     )
     max_turns: int | None = Field(
         description="Maximum number of turns in the conversation; only if explicitly stated",
-        ge=1, le=10
+        ge=1,
+        le=10,
     )
 
     missing_fields: list[str] = Field(
@@ -33,6 +36,7 @@ class OnboardingSetup(BaseModel):
     clarification_question: str | None = Field(
         description="Short question asking for missing required fields"
     )
+
 
 # --- Core domain models ---
 class Scenario(BaseModel):
@@ -114,9 +118,13 @@ class TrainingConfig(BaseModel):
 
 # --- Main State ---
 
-class TrainingState(TrainingInputState):
+
+class TrainingState(BaseModel):
     """State of the training session."""
 
+    messages: Annotated[list[AnyMessage], add_messages]
+    scenario: Scenario | None = None
+    config: TrainingConfig = Field(default_factory=TrainingConfig)
     caller_profile: CallerProfile | None = None
 
     evaluations: Annotated[list[TurnEvaluation], add] = Field(default_factory=list)

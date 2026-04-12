@@ -3,9 +3,8 @@
 from typing import Literal, cast
 
 from langchain.chat_models import init_chat_model
-from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_core.output_parsers import StrOutputParser
-from langgraph.types import interrupt
 
 from agent.prompts import (
     CALLER_SIMULATION,
@@ -27,12 +26,147 @@ from agent.state import (
 )
 from agent.utils import format_history, get_profile, language_constraint
 
+DEFAULT_LANGUAGE = "en"
+DEFAULT_MAX_TURNS = 10
+DEFAULT_FEEDBACK_MODE = "both"
+
 llm = init_chat_model("openai:gpt-5.4-mini")
 
 
-async def scenario_setup(state: TrainingInputState) -> dict:
-    """Build the scenario description and caller profile for a new session."""
+# -----------------------------------------------------------------------------------------------
+# Router
+# -----------------------------------------------------------------------------------------------
 
+
+async def entry_router(
+    state: TrainingState,
+) -> Literal["onboarding", "caller_simulation", "behaviour_analysis"]:
+    """Route flow based on initial state."""
+    if not state.scenario:
+        return "onboarding"
+
+    if not state.messages:
+        return "caller_simulation"
+
+    if state.messages[-1].type == "human":
+        return "behaviour_analysis"
+
+    return "caller_simulation"
+
+
+async def route_after_onboarding(
+    state: TrainingState,
+) -> Literal["scenario_setup", "onboarding"]:
+    """Route flow after onboarding based on scenario setup state."""
+    if not state.scenario:
+        return "onboarding"
+    return "scenario_setup"
+
+
+async def route_after_decide_phase(
+    state: TrainingState,
+) -> Literal["per_turn_feedback", "caller_simulation", "final_feedback", "end"]:
+    """Route flow after control based on feedback mode and completion state."""
+    mode = state.config.feedback_mode
+
+    if mode in ("per_turn", "both"):
+        return "per_turn_feedback"
+    if state.finished:
+        if mode == "final":
+            return "final_feedback"
+        return "end"
+    return "caller_simulation"
+
+
+async def route_after_per_turn_feedback(
+    state: TrainingState,
+) -> Literal["caller_simulation", "final_feedback", "end"]:
+    """Route flow after per-turn feedback based on finish state and mode."""
+    if not state.finished:
+        return "caller_simulation"
+    if state.config.feedback_mode == "both":
+        return "final_feedback"
+    return "end"
+
+
+async def decide_phase(state: TrainingState) -> dict:
+    """Decide the next conversation phase and whether training should stop."""
+    if not state.caller_profile:
+        raise ValueError("Caller profile is not set")
+
+    if not state.scenario:
+        raise ValueError("Scenario is not set")
+
+    formatted_history = await format_history(state)
+
+    decision_msg = PHASE_DECISION.format(
+        scenario_description=state.scenario.description,
+        language=state.config.language,
+        emotional_state=state.caller_profile.emotional_state,
+        volatility=state.caller_profile.volatility,
+        cooperativeness=state.caller_profile.cooperativeness,
+        phase=state.phase,
+        formatted_history=formatted_history,
+        turn_index=state.turn_index,
+        max_turns=state.config.max_turns,
+    )
+
+    messages = [
+        SystemMessage(
+            content=(
+                "You control the flow of a counselling conversation. "
+                + language_constraint(state.config.language)
+            )
+        ),
+        HumanMessage(content=decision_msg),
+    ]
+
+    structured_llm = llm.with_structured_output(PhaseDecision)
+    decision = cast(PhaseDecision, await structured_llm.ainvoke(messages))
+
+    finished = decision.finished
+    if state.turn_index >= state.config.max_turns:
+        finished = True
+
+    return {
+        "phase": decision.phase,
+        "finished": finished,
+    }
+
+
+# -----------------------------------------------------------------------------------------------
+# Onboarding
+# -----------------------------------------------------------------------------------------------
+
+
+async def onboarding(state: TrainingState) -> dict:
+    """Extract the scenario description from the training state."""
+    formatted_messages = "\n".join(str(msg.content) for msg in state.messages)
+
+    messages = [
+        SystemMessage(content=PARSE_ONBOARDING),
+        HumanMessage(content=formatted_messages),
+    ]
+
+    structured_llm = llm.with_structured_output(OnboardingSetup)
+    setup = cast(OnboardingSetup, await structured_llm.ainvoke(messages))
+
+    if any(f in setup.missing_fields for f in ("category", "difficulty")):
+        return {
+            "messages": [AIMessage(content=setup.clarification_question)],
+        }
+
+    scenario = Scenario(category=setup.category, difficulty=setup.difficulty)
+    config = TrainingConfig(
+        language=setup.language or DEFAULT_LANGUAGE,
+        max_turns=setup.max_turns or DEFAULT_MAX_TURNS,
+    )
+
+    return {"scenario": scenario, "config": config}
+
+
+async def scenario_setup(state: TrainingState) -> dict:
+    """Build the scenario description and caller profile for a new session."""
     if not state.scenario:
         raise ValueError("Scenario is not set")
 
@@ -68,10 +202,18 @@ async def scenario_setup(state: TrainingInputState) -> dict:
     }
 
 
+# -----------------------------------------------------------------------------------------------
+# Simulation
+# -----------------------------------------------------------------------------------------------
+
+
 async def caller_simulation(state: TrainingState) -> dict:
     """Generate the next caller message from the current training state."""
     if not state.caller_profile:
         raise ValueError("Caller profile is not set")
+
+    if not state.scenario:
+        raise ValueError("Scenario is not set")
 
     formatted_history = await format_history(state)
 
@@ -103,17 +245,9 @@ async def caller_simulation(state: TrainingState) -> dict:
     }
 
 
-def await_learner_input(state: TrainingState) -> dict:
-    """Prompt for learner input and return it as a human message."""
-    learner_input = interrupt("")
-    message = HumanMessage(
-        content=learner_input,
-        name="learner",
-    )
-
-    return {
-        "messages": [message],
-    }
+# -----------------------------------------------------------------------------------------------
+# Evaluation
+# -----------------------------------------------------------------------------------------------
 
 
 async def aggregate_evaluation(
@@ -164,6 +298,9 @@ async def behaviour_analysis(state: TrainingState) -> dict:
 
     formatted_history = await format_history(state)
 
+    if not state.scenario:
+        raise ValueError("Scenario is not set")
+
     evaluation_msg = LEARNER_EVALUATION.format(
         scenario_description=state.scenario.description,
         language=state.config.language,
@@ -193,98 +330,28 @@ async def behaviour_analysis(state: TrainingState) -> dict:
     }
 
 
-async def decide_phase(state: TrainingState) -> dict:
-    """Decide the next conversation phase and whether training should stop."""
-    if not state.caller_profile:
-        raise ValueError("Caller profile is not set")
-
-    formatted_history = await format_history(state)
-
-    decision_msg = PHASE_DECISION.format(
-        scenario_description=state.scenario.description,
-        language=state.config.language,
-        emotional_state=state.caller_profile.emotional_state,
-        volatility=state.caller_profile.volatility,
-        cooperativeness=state.caller_profile.cooperativeness,
-        phase=state.phase,
-        formatted_history=formatted_history,
-        turn_index=state.turn_index,
-        max_turns=state.config.max_turns,
-    )
-
-    messages = [
-        SystemMessage(
-            content=(
-                "You control the flow of a counselling conversation. "
-                + language_constraint(state.config.language)
-            )
-        ),
-        HumanMessage(content=decision_msg),
-    ]
-
-    structured_llm = llm.with_structured_output(PhaseDecision)
-    decision = cast(PhaseDecision, await structured_llm.ainvoke(messages))
-
-    finished = decision.finished
-    if state.turn_index >= state.config.max_turns:
-        finished = True
-
-    return {
-        "phase": decision.phase,
-        "finished": finished,
-    }
-
-
-async def route_after_decide_phase(
-    state: TrainingState,
-) -> Literal["per_turn_feedback", "continue", "final_feedback", "end"]:
-    """Route flow after control based on feedback mode and completion state."""
-    mode = state.config.feedback_mode
-
-    if mode in ("per_turn", "both"):
-        return "per_turn_feedback"
-    if state.finished:
-        if mode == "final":
-            return "final_feedback"
-        return "end"
-    return "continue"
-
-
-async def route_after_per_turn_feedback(
-    state: TrainingState,
-) -> Literal["continue", "final_feedback", "end"]:
-    """Route flow after per-turn feedback based on finish state and mode."""
-    if not state.finished:
-        return "continue"
-    if state.config.feedback_mode == "both":
-        return "final_feedback"
-    return "end"
-
-
 async def per_turn_feedback(state: TrainingState) -> dict:
     """Generate coaching feedback for the most recent evaluated turn."""
+    if not state.scenario:
+        raise ValueError("Scenario is not set")
+
     if not state.evaluations:
         return {}
 
     latest_evaluation = state.evaluations[-1]
-    feedback_msg = TURN_FEEDBACK.format(
+
+    system_prompt = TURN_FEEDBACK.format(
         scenario_description=state.scenario.description,
-        language=state.config.language,
         turn_index=latest_evaluation.turn_index,
         empathy=latest_evaluation.empathy,
         question_quality=latest_evaluation.question_quality,
         advice_given="yes" if latest_evaluation.advice_given else "no",
         notes=latest_evaluation.notes or "",
-    )
+    ) + language_constraint(state.config.language)
 
     messages = [
-        SystemMessage(
-            content=(
-                "You are a trainer for telephone counselling. "
-                + language_constraint(state.config.language)
-            )
-        ),
-        HumanMessage(content=feedback_msg),
+        SystemMessage(content=system_prompt),
+        HumanMessage(content=state.messages[-1].content),
     ]
 
     response = await llm.ainvoke(messages)
@@ -295,6 +362,9 @@ async def final_feedback(state: TrainingState) -> dict:
     """Generate final feedback from aggregate metrics and chat history."""
     if not state.aggregates:
         raise ValueError("Aggregates are not set")
+
+    if not state.scenario:
+        raise ValueError("Scenario is not set")
 
     formatted_history = await format_history(state)
 

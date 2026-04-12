@@ -1,8 +1,29 @@
 """Provides templates and prompts for creating and evaluating conversational AI interactions."""
 
 PARSE_ONBOARDING = """
-Extract structured scenario setup from user input.
-Be strict. Do not infer missing values.
+Extract structured scenario setup from the user input.
+
+REQUIRED FIELDS
+- category
+- difficulty
+
+OPTIONAL FIELDS
+- language
+- feedback_mode
+
+RULES
+- Do NOT infer or guess values apart from the language
+- Infer language from the user input if not stated explicitly
+- Only extract explicitly stated information
+- If required fields are missing or invalid, set them to null
+
+OUTPUT
+Return all fields.
+
+- missing_fields must contain missing or invalid required fields
+- clarification_question must ask ONLY for missing required fields
+- If nothing is missing, missing_fields must be empty and clarification_question null
+- If you cannot identify the language, set it as missing_fields
 """
 
 
@@ -236,11 +257,10 @@ Keep it concise (max 150 words).
 
 
 TURN_FEEDBACK = """
+You are a trainer for telephone counselling.
+
 SCENARIO:
 {scenario_description}
-
-LANGUAGE:
-{language}
 
 TURN INDEX:
 {turn_index}
@@ -257,5 +277,5 @@ Provide concise coaching feedback for this turn only:
 - what to improve in the next response
 - one concrete suggested sentence
 
-Keep it concise (max 80 words).
+Start with **Feedback** and keep it concise (max 80 words).
 """

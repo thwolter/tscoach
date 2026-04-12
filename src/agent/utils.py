@@ -6,13 +6,23 @@ from agent.state import CallerProfile, TrainingState
 
 
 async def format_history(state: TrainingState) -> str:
-    """Format conversation history from training state as a single string."""
+    """Format conversation history starting from the first caller message."""
     history = []
+    started = False
+
     for msg in state.messages:
         if msg.name == "caller":
+            started = True
+
+        if not started:
+            continue
+
+        if msg.type == "ai" and msg.name == "caller":
             history.append(f"Caller: {msg.content}")
-        elif msg.name == "learner":
+
+        if msg.type == "human":
             history.append(f"Learner: {msg.content}")
+
     return "\n".join(history)
 
 
