@@ -2,7 +2,11 @@
 
 from agent.nodes.evaluation import behaviour_analysis, final_feedback, per_turn_feedback
 from agent.nodes.onboarding import onboarding, scenario_setup
-from agent.nodes.simulation import caller_simulation, decide_phase
+from agent.nodes.simulation import (
+    caller_simulation,
+    decide_phase,
+    update_caller_profile,
+)
 from agent.router import (
     entry_router,
     route_after_decide_phase,
@@ -15,6 +19,7 @@ __all__ = [
     "onboarding",
     "scenario_setup",
     "caller_simulation",
+    "update_caller_profile",
     "decide_phase",
     "behaviour_analysis",
     "final_feedback",

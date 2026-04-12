@@ -52,6 +52,21 @@ class CallerProfile(BaseModel):
     cooperativeness: float
 
 
+class CallerProfileUpdate(BaseModel):
+    """Updated caller profile after considering recent dialog history."""
+
+    emotional_state: Literal[
+        "calm", "mild distress", "moderate distress", "severe distress"
+    ]
+    complexity: int = Field(..., ge=1, le=5)
+    volatility: float = Field(..., ge=0, le=1)
+    cooperativeness: float = Field(..., ge=0, le=1)
+    rationale: str = Field(
+        ...,
+        description="Short explanation of why the profile changed based on the recent turn",
+    )
+
+
 class TurnEvaluation(BaseModel):
     """Evaluation of the learner's response to the caller."""
 
