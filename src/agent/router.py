@@ -2,7 +2,7 @@
 
 from typing import Literal
 
-from langchain_core.messages import AIMessage
+from langchain_core.messages import AIMessage, HumanMessage
 
 from agent.state import TrainingState
 from agent.utils import parse_handover_command
@@ -16,6 +16,7 @@ async def entry_router(
     "behaviour_analysis",
     "handover_command",
     "trainer_takeover",
+    "end",
 ]:
     """Route flow based on initial state."""
     if not state.scenario:
@@ -26,27 +27,27 @@ async def entry_router(
 
     last_message = state.messages[-1]
 
-    if last_message.type == "human":
-        if parse_handover_command(str(last_message.content)) is not None:
+    if isinstance(last_message, HumanMessage):
+        if parse_handover_command(last_message) is not None:
             return "handover_command"
         return "behaviour_analysis"
 
     if (
-        state.handover_active
-        and isinstance(last_message, AIMessage)
+        isinstance(last_message, AIMessage)
+        and state.handover_active
         and getattr(last_message, "name", None) == "caller"
     ):
         return "trainer_takeover"
 
-    return "caller_simulation"
+    return "end"
 
 
 async def route_after_onboarding(
     state: TrainingState,
-) -> Literal["scenario_setup", "onboarding"]:
+) -> Literal["scenario_setup", "end"]:
     """Route flow after onboarding based on scenario setup state."""
     if not state.scenario:
-        return "onboarding"
+        return "end"
     return "scenario_setup"
 
 

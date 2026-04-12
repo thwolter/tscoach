@@ -32,6 +32,7 @@ class TrainingState(BaseModel):
 
     turn_index: int = 0
     finished: bool = False
+
     handover_requested: bool = False
     handover_active: bool = False
     command_mode: Literal["none", "await_confirmation", "trainer_takeover"] = "none"

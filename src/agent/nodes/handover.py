@@ -25,7 +25,7 @@ async def handover_command(state: TrainingState) -> dict:
     if last_user_message.type != "human":
         raise ValueError("Last message is not from the user")
 
-    action = parse_handover_command(str(last_user_message.content))
+    action = parse_handover_command(last_user_message)
     if action is None:
         return {"command_mode": "none"}
 

@@ -53,7 +53,7 @@ builder.add_conditional_edges(
     route_after_onboarding,
     {
         "scenario_setup": "scenario_setup",
-        "onboarding": "onboarding",
+        "end": END,
     },
 )
 builder.add_edge("scenario_setup", "caller_simulation")

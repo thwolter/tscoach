@@ -10,17 +10,19 @@ from agent.state import TrainingState
 
 
 def parse_handover_command(
-    content: str,
+    message: HumanMessage,
 ) -> Literal["request", "confirm", "cancel"] | None:
-    """Parse handover slash commands from learner input."""
-    normalized = " ".join(content.strip().lower().split())
-    if normalized in ("/handover", "/handover trainer"):
+    """Parse the handover command from the message."""
+    text = (message.text or "").strip().lower()
+    if not text.startswith("/handover"):
+        return None
+
+    parts = text.split()
+    if len(parts) == 1:
         return "request"
-    if normalized == "/handover confirm":
-        return "confirm"
-    if normalized == "/handover cancel":
-        return "cancel"
-    return None
+
+    action = parts[1].strip(".,!?;:")
+    return action if action in {"confirm", "cancel"} else "request"
 
 
 async def format_conversation_history(state: TrainingState) -> str:
@@ -43,7 +45,7 @@ async def format_conversation_history(state: TrainingState) -> str:
     filtered: list[HumanMessage | AIMessage] = []
     for msg in messages[start_idx:]:
         if isinstance(msg, HumanMessage):
-            if parse_handover_command(str(msg.content)) is None:
+            if parse_handover_command(msg) is None:
                 filtered.append(msg)
             continue
 
