@@ -1,60 +1,111 @@
-# New LangGraph Project
+# TSCoach
 
-[![CI](https://github.com/langchain-ai/new-langgraph-project/actions/workflows/unit-tests.yml/badge.svg)](https://github.com/langchain-ai/new-langgraph-project/actions/workflows/unit-tests.yml)
-[![Integration Tests](https://github.com/langchain-ai/new-langgraph-project/actions/workflows/integration-tests.yml/badge.svg)](https://github.com/langchain-ai/new-langgraph-project/actions/workflows/integration-tests.yml)
+TSCoach is a LangGraph-based training agent for telephone counselling practice. It simulates a caller, evaluates each learner response, and provides coaching feedback during and/or after the session.
 
-This template demonstrates a simple application implemented using [LangGraph](https://github.com/langchain-ai/langgraph), designed for showing how to get started with [LangGraph Server](https://langchain-ai.github.io/langgraph/concepts/langgraph_server/#langgraph-server) and using [LangGraph Studio](https://langchain-ai.github.io/langgraph/concepts/langgraph_studio/), a visual debugging IDE.
+## What It Does
 
-<div align="center">
-  <img src="./static/studio_ui.png" alt="Graph view in LangGraph studio UI" width="75%" />
-</div>
+- Runs a structured training loop with onboarding, simulation, evaluation, and feedback.
+- Generates realistic caller behavior based on scenario difficulty.
+- Tracks per-turn quality (empathy, question quality, advice tendency).
+- Produces per-turn feedback, final feedback, or both.
 
-The core logic defined in `src/agent/graph.py`, showcases an single-step application that responds with a fixed string and the configuration provided.
+## Flow Overview
 
-You can extend this graph to orchestrate more complex agentic workflows that can be visualized and debugged in LangGraph Studio.
+The graph is defined in `src/agent/graph.py`.
 
-## Getting Started
+1. `onboarding`: extracts scenario setup (category + difficulty required).
+2. `scenario_setup`: generates scenario description and initial caller profile.
+3. `caller_simulation`: produces the next caller utterance.
+4. `behaviour_analysis`: evaluates the latest learner reply.
+5. `update_caller_profile`: updates caller state with bounded drift.
+6. `decide_phase`: decides whether to continue or finish.
+7. `per_turn_feedback` and/or `final_feedback`: returns coaching output.
 
-1. Install dependencies, along with the [LangGraph CLI](https://langchain-ai.github.io/langgraph/concepts/langgraph_cli/), which will be used to run the server.
+## Requirements
+
+- Python 3.11+
+- [uv](https://github.com/astral-sh/uv)
+- OpenAI API key (default model is `openai:gpt-5.4-mini`)
+
+## Quickstart
+
+1. Install dependencies.
 
 ```bash
-cd path/to/your/app
-pip install -e . "langgraph-cli[inmem]"
+uv sync --group dev
 ```
 
-2. (Optional) Customize the code and project as needed. Create a `.env` file if you need to use secrets.
+2. Configure environment variables.
 
 ```bash
 cp .env.example .env
 ```
 
-If you want to enable LangSmith tracing, add your LangSmith API key to the `.env` file.
+Add at least:
+
+```env
+OPENAI_API_KEY=your_key_here
+```
+
+Optional for tracing:
+
+```env
+LANGSMITH_API_KEY=...
+LANGSMITH_PROJECT=tscoach
+```
+
+3. Start LangGraph locally.
+
+```bash
+uv run langgraph dev
+```
+
+4. Open LangGraph Studio from the URL printed in the terminal and run the `agent` graph.
+
+## Example Onboarding Prompt
+
+Your first learner message should include at least scenario category and difficulty. Example:
 
 ```text
-# .env
-LANGSMITH_API_KEY=lsv2...
+I want to practice counselling for family conflict, difficulty 7, language de, feedback both, max_turns 5.
 ```
 
-3. Start the LangGraph Server.
+## Configuration
 
-```shell
-langgraph dev
-```
+Runtime config is stored in `TrainingConfig` (`src/agent/schemas.py`):
 
-For more information on getting started with LangGraph Server, [see here](https://langchain-ai.github.io/langgraph/tutorials/langgraph-platform/local-server/).
-
-## How to customize
-
-1. **Define runtime context**: Modify the `Context` class in the `graph.py` file to expose the arguments you want to configure per assistant. For example, in a chatbot application you may want to define a dynamic system prompt or LLM to use. For more information on runtime context in LangGraph, [see here](https://langchain-ai.github.io/langgraph/agents/context/?h=context#static-runtime-context).
-
-2. **Extend the graph**: The core logic of the application is defined in [graph.py](./src/agent/graph.py). You can modify this file to add new nodes, edges, or change the flow of information.
+- `language`: output language (default `de` in schema, onboarding fallback currently `en` in node logic)
+- `max_turns`: maximum conversation turns (default `3` in schema)
+- `feedback_mode`: `none`, `per_turn`, `final`, `both` (default `both`)
 
 ## Development
 
-While iterating on your graph in LangGraph Studio, you can edit past state and rerun your app from previous states to debug specific nodes. Local changes will be automatically applied via hot reload.
+Useful commands from the `Makefile`:
 
-Follow-up requests extend the same thread. You can create an entirely new thread, clearing previous history, using the `+` button in the top right.
+```bash
+make lint
+make format
+make test
+make integration_tests
+```
 
-For more advanced features and examples, refer to the [LangGraph documentation](https://langchain-ai.github.io/langgraph/). These resources can help you adapt this template for your specific use case and build more sophisticated conversational agents.
+## Project Structure
 
-LangGraph Studio also integrates with [LangSmith](https://smith.langchain.com/) for more in-depth tracing and collaboration with teammates, allowing you to analyze and optimize your chatbot's performance.
+```text
+src/agent/
+  graph.py              # LangGraph assembly
+  router.py             # Conditional routing logic
+  schemas.py            # Pydantic schemas
+  state.py              # Training state model
+  nodes/
+    onboarding.py       # Setup extraction + scenario creation
+    simulation.py       # Caller simulation + phase decisions
+    evaluation.py       # Turn evaluation + feedback
+  prompts.py            # Prompt templates
+  llm.py                # Model initialization
+```
+
+## Notes
+
+- This repository currently has test scaffolding under `tests/`, but no concrete test cases yet.
+- To switch model/provider, update `src/agent/llm.py`.
