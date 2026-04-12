@@ -112,4 +112,6 @@ async def trainer_takeover(state: TrainingState) -> dict:
     return {
         "messages": [trainer_message],
         "command_mode": "none",
+        "handover_requested": False,
+        "handover_active": False,
     }

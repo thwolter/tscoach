@@ -55,7 +55,8 @@ async def route_after_decide_phase(
     state: TrainingState,
 ) -> Literal["per_turn_feedback", "caller_simulation", "end_summary"]:
     """Route flow after control based on feedback mode and completion state."""
-    if state.handover_active:
+    handover_active = state.handover_active and state.command_mode == "trainer_takeover"
+    if handover_active:
         if state.finished:
             return "end_summary"
         return "caller_simulation"
