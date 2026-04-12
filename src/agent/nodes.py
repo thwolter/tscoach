@@ -11,14 +11,17 @@ from agent.prompts import (
     CALLER_SIMULATION,
     EVALUATION_SUMMARY,
     LEARNER_EVALUATION,
+    PARSE_ONBOARDING,
     PHASE_DECISION,
+    SCENARIO_SETUP,
     TURN_FEEDBACK,
 )
 from agent.state import (
     Aggregates,
+    OnboardingSetup,
     PhaseDecision,
     Scenario,
-    TrainingInputState,
+    TrainingConfig,
     TrainingState,
     TurnEvaluation,
 )
@@ -29,33 +32,33 @@ llm = init_chat_model("openai:gpt-5.4-mini")
 
 async def scenario_setup(state: TrainingInputState) -> dict:
     """Build the scenario description and caller profile for a new session."""
-    category = state.scenario.category
-    if category is None:
-        raise ValueError("Scenario category cannot be None")
 
+    if not state.scenario:
+        raise ValueError("Scenario is not set")
+
+    category = state.scenario.category
     difficulty = state.scenario.difficulty
-    if difficulty is None:
-        raise ValueError("Scenario difficulty cannot be None")
+
+    if not difficulty:
+        raise ValueError("Scenario difficulty is not set")
+
+    create_scenario = SCENARIO_SETUP.format(category=category, difficulty=difficulty)
 
     messages = [
         SystemMessage(
             content=(
-                "You generate realistic telephone counselling scenarios. "
+                "You generate realistic telephone counselling scenarios."
                 + language_constraint(state.config.language)
             )
         ),
-        HumanMessage(
-            content=f"Category: {category}\nDifficulty: {difficulty}\n"
-            "Create a short, realistic scenario (max 4 sentences).\n"
-            f"Language: {state.config.language}"
-        ),
+        HumanMessage(content=create_scenario),
     ]
 
     chain = llm | StrOutputParser()
-    description = await chain.ainvoke(messages)
+    scenario_description = await chain.ainvoke(messages)
 
     scenario = Scenario(
-        category=category, difficulty=difficulty, description=description
+        category=category, difficulty=difficulty, description=scenario_description
     )
     profile = get_profile(difficulty)
 

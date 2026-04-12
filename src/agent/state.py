@@ -8,12 +8,38 @@ from langgraph.graph.message import add_messages
 from pydantic import BaseModel, Field
 
 
+class OnboardingSetup(BaseModel):
+    category: str | None = Field(
+        description="Scenario topic or context explicitly provided by the user"
+    )
+    difficulty: int | None = Field(
+        description="Difficulty level from 1 (easy) to 10 (very difficult)"
+    )
+    language: str | None = Field(
+        description="Language for the conversation. Inferred from the user prompt if not stated explicitly.",
+        max_length=2
+    )
+    feedback_mode: Literal["none", "per_turn", "final", "both"] | None = Field(
+        description="Feedback mode: none, per_turn, final, or both; only if explicitly stated"
+    )
+    max_turns: int | None = Field(
+        description="Maximum number of turns in the conversation; only if explicitly stated",
+        ge=1, le=10
+    )
+
+    missing_fields: list[str] = Field(
+        description="List of required fields that are missing or invalid"
+    )
+    clarification_question: str | None = Field(
+        description="Short question asking for missing required fields"
+    )
+
 # --- Core domain models ---
 class Scenario(BaseModel):
     """Scenario description."""
 
-    category: str
-    difficulty: int = Field(..., ge=1, le=10)
+    category: str | None = None
+    difficulty: int | None = Field(None, ge=1, le=10)
     description: str | None = None
 
 
@@ -87,23 +113,16 @@ class TrainingConfig(BaseModel):
 
 
 # --- Main State ---
-class TrainingInputState(BaseModel):
-    """State of the training session."""
-
-    messages: Annotated[list[AnyMessage], add_messages]
-    scenario: Scenario
-    config: TrainingConfig = Field(default_factory=TrainingConfig)
-
 
 class TrainingState(TrainingInputState):
     """State of the training session."""
 
     caller_profile: CallerProfile | None = None
 
-    evaluations: Annotated[list[TurnEvaluation], add]
+    evaluations: Annotated[list[TurnEvaluation], add] = Field(default_factory=list)
 
     aggregates: Aggregates | None = None
-    per_turn_feedback: Annotated[list[str], add]
+    per_turn_feedback: Annotated[list[str], add] = Field(default_factory=list)
     final_feedback: str | None = None
 
     phase: Literal["opening", "exploration", "closing"] = "opening"

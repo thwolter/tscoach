@@ -1,5 +1,6 @@
 """Graph of the agent."""
 
+from langgraph.checkpoint.memory import MemorySaver
 from langgraph.constants import END, START
 from langgraph.graph import StateGraph
 
@@ -9,6 +10,7 @@ from agent.nodes import (
     caller_simulation,
     decide_phase,
     final_feedback,
+    onboarding,
     per_turn_feedback,
     route_after_decide_phase,
     route_after_per_turn_feedback,
@@ -55,4 +57,5 @@ builder.add_conditional_edges(
 )
 builder.add_edge("final_feedback", END)
 
+memory = MemorySaver()
 graph = builder.compile()
