@@ -8,12 +8,14 @@ from agent.nodes import (
     behaviour_analysis,
     caller_simulation,
     decide_phase,
+    end_summary,
     entry_router,
     final_feedback,
     handover_command,
     onboarding,
     per_turn_feedback,
     route_after_decide_phase,
+    route_after_end_summary,
     route_after_handover_command,
     route_after_onboarding,
     route_after_per_turn_feedback,
@@ -34,6 +36,7 @@ builder.add_node("behaviour_analysis", behaviour_analysis)
 builder.add_node("update_caller_profile", update_caller_profile)
 builder.add_node("decide_phase", decide_phase)
 builder.add_node("per_turn_feedback", per_turn_feedback)
+builder.add_node("end_summary", end_summary)
 builder.add_node("final_feedback", final_feedback)
 
 
@@ -74,17 +77,23 @@ builder.add_conditional_edges(
     route_after_decide_phase,
     {
         "per_turn_feedback": "per_turn_feedback",
-        "final_feedback": "final_feedback",
+        "end_summary": "end_summary",
         "caller_simulation": "caller_simulation",
-        "end": END,
     },
 )
 builder.add_conditional_edges(
     "per_turn_feedback",
     route_after_per_turn_feedback,
     {
-        "final_feedback": "final_feedback",
+        "end_summary": "end_summary",
         "caller_simulation": "caller_simulation",
+    },
+)
+builder.add_conditional_edges(
+    "end_summary",
+    route_after_end_summary,
+    {
+        "final_feedback": "final_feedback",
         "end": END,
     },
 )

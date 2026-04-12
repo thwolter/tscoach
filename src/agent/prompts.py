@@ -268,6 +268,31 @@ Return the updated profile in the required structured format.
 """
 
 
+TRAINING_WRAP_UP = """
+SCENARIO:
+{scenario_description}
+
+LANGUAGE:
+{language}
+
+CURRENT PHASE:
+{phase}
+
+CONVERSATION:
+{formatted_history}
+
+TASK:
+Write a short closing wrap-up of the conversation and development.
+
+FORMAT:
+- Start with **Wrap-up:**
+- Mention key progress from the beginning to the end in 2-3 short sentences
+- End with a polite closing sentence
+
+Keep it concise (max 90 words).
+"""
+
+
 EVALUATION_SUMMARY = """
 SCENARIO:
 {scenario_description}
@@ -275,21 +300,26 @@ SCENARIO:
 LANGUAGE:
 {language}
 
-CONVERSATION:
-{formatted_history}
-
 SUMMARY:
 - empathy: {avg_empathy:.2f}
 - question quality: {avg_question_quality:.2f}
 - advice ratio: {advice_ratio:.2f}
+- overall score: {overall_score:.2f}
+- performance band: {performance_band}
 
 TASK:
-Provide concise feedback with:
+Provide concise end-of-training feedback with:
 - strengths
 - improvements
 - concrete suggestions
+- a short closing wrap-up to end the training nicely
 
-Keep it concise (max 150 words).
+FORMAT:
+- Start with **Summary:** (1 short sentence)
+- Then "Result:" (1 short sentence based on score and performance band - without mentioning score and the band)
+- Then 1-2 short bullet points with concrete next-step suggestions
+
+Keep it concise (max 120 words).
 """
 
 

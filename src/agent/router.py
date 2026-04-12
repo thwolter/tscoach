@@ -53,31 +53,36 @@ async def route_after_onboarding(
 
 async def route_after_decide_phase(
     state: TrainingState,
-) -> Literal["per_turn_feedback", "caller_simulation", "final_feedback", "end"]:
+) -> Literal["per_turn_feedback", "caller_simulation", "end_summary"]:
     """Route flow after control based on feedback mode and completion state."""
     if state.handover_active:
         if state.finished:
-            return "end"
+            return "end_summary"
         return "caller_simulation"
 
     mode = state.config.feedback_mode
 
-    if mode in ("per_turn", "both"):
+    if mode in ("per_turn", "both") and not state.finished:
         return "per_turn_feedback"
     if state.finished:
-        if mode == "final":
-            return "final_feedback"
-        return "end"
+        return "end_summary"
     return "caller_simulation"
 
 
 async def route_after_per_turn_feedback(
     state: TrainingState,
-) -> Literal["caller_simulation", "final_feedback", "end"]:
+) -> Literal["caller_simulation", "end_summary"]:
     """Route flow after per-turn feedback based on finish state and mode."""
     if not state.finished:
         return "caller_simulation"
-    if state.config.feedback_mode == "both":
+    return "end_summary"
+
+
+async def route_after_end_summary(
+    state: TrainingState,
+) -> Literal["final_feedback", "end"]:
+    """Route flow after end summary based on evaluation availability."""
+    if state.evaluations:
         return "final_feedback"
     return "end"
 
