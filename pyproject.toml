@@ -1,6 +1,6 @@
 [project]
 name = "agent"
-version = "0.1.0"
+version = "0.2.0"
 description = "Helpline Counsellor Training Agent."
 authors = [
     { name = "Thomas Wolter", email = "thwolter@gmail.com" },

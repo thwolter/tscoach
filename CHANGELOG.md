@@ -1,3 +1,14 @@
+## 0.2.0 (2026-04-12)
+
+### Feat
+
+- **agent**: add end_summary node and integrate into training flow
+- **agent**: add trainer handover functionality with routing and node integration
+
+### Refactor
+
+- **agent**: remove handover command tests and update routing logic
+
 ## 0.1.0 (2026-04-12)
 
 ### Feat
