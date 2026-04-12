@@ -105,9 +105,6 @@ VOLATILITY:
 COOPERATIVENESS:
 {cooperativeness}
 
-CONVERSATION SO FAR:
-{formatted_history}
-
 OUTPUT FORMAT
 - Plain text only
 - No markdown
