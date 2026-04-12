@@ -2,10 +2,15 @@
 
 from typing import cast
 
-from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 
 from agent.llm import llm
-from agent.prompts import EVALUATION_SUMMARY, LEARNER_EVALUATION, TURN_FEEDBACK
+from agent.prompts import (
+    EVALUATION_SUMMARY,
+    LEARNER_EVALUATION,
+    TRAINING_WRAP_UP,
+    TURN_FEEDBACK,
+)
 from agent.schemas import Aggregates, TurnEvaluation
 from agent.state import TrainingState
 from agent.utils import format_conversation_history, language_constraint
@@ -119,23 +124,73 @@ async def per_turn_feedback(state: TrainingState) -> dict:
     return {"messages": [response], "per_turn_feedback": [response.content]}
 
 
-async def final_feedback(state: TrainingState) -> dict:
-    """Generate final feedback from aggregate metrics and chat history."""
-    if not state.aggregates:
-        raise ValueError("Aggregates are not set")
-
+async def end_summary(state: TrainingState) -> dict:
+    """Generate a brief end-of-session wrap-up of the conversation trajectory."""
     if not state.scenario:
         raise ValueError("Scenario is not set")
 
     formatted_history = await format_conversation_history(state)
 
+    summary_msg = TRAINING_WRAP_UP.format(
+        scenario_description=state.scenario.description,
+        language=state.config.language,
+        phase=state.phase,
+        formatted_history=formatted_history,
+    )
+
+    messages = [
+        SystemMessage(
+            content=(
+                "You are a trainer for telephone counselling. "
+                + language_constraint(state.config.language)
+            )
+        ),
+        HumanMessage(content=summary_msg),
+    ]
+
+    response = await llm.ainvoke(messages)
+    return {"messages": [response], "end_summary": response.content}
+
+
+def derive_training_result(aggregates: Aggregates) -> tuple[float, str]:
+    """Convert aggregate metrics into a compact final score and performance band."""
+    score = (
+        aggregates.avg_empathy
+        + aggregates.avg_question_quality
+        + (1 - aggregates.advice_ratio)
+    ) / 3
+
+    if score >= 0.8:
+        band = "strong"
+    elif score >= 0.6:
+        band = "developing"
+    else:
+        band = "needs_practice"
+
+    return score, band
+
+
+async def final_feedback(state: TrainingState) -> dict:
+    """Generate final feedback from aggregate metrics and chat history."""
+    if not state.scenario:
+        raise ValueError("Scenario is not set")
+
+    aggregates = state.aggregates
+    if aggregates is None:
+        return {
+            "messages": [AIMessage(content="No evaluations available.")],
+        }
+
+    score, performance_band = derive_training_result(aggregates)
+
     feedback_msg = EVALUATION_SUMMARY.format(
         scenario_description=state.scenario.description,
         language=state.config.language,
-        formatted_history=formatted_history,
-        avg_empathy=state.aggregates.avg_empathy,
-        avg_question_quality=state.aggregates.avg_question_quality,
-        advice_ratio=state.aggregates.advice_ratio,
+        avg_empathy=aggregates.avg_empathy,
+        avg_question_quality=aggregates.avg_question_quality,
+        advice_ratio=aggregates.advice_ratio,
+        overall_score=score,
+        performance_band=performance_band,
     )
 
     messages = [

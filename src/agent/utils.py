@@ -1,11 +1,28 @@
 """Provide helper functions for training state formatting and profile setup."""
 
 import random
+from typing import Literal
 
 from langchain_core.messages import AIMessage, HumanMessage, get_buffer_string
 
 from agent.schemas import CallerProfile
 from agent.state import TrainingState
+
+
+def parse_handover_command(
+    message: HumanMessage,
+) -> Literal["request", "confirm", "cancel"] | None:
+    """Parse the handover command from the message."""
+    text = (message.text or "").strip().lower()
+    if not text.startswith("/handover"):
+        return None
+
+    parts = text.split()
+    if len(parts) == 1:
+        return "request"
+
+    action = parts[1].strip(".,!?;:")
+    return action if action in {"confirm", "cancel"} else "request"
 
 
 async def format_conversation_history(state: TrainingState) -> str:
@@ -25,12 +42,19 @@ async def format_conversation_history(state: TrainingState) -> str:
     if start_idx is None:
         return ""
 
-    filtered = [
-        msg
-        for msg in messages[start_idx:]
-        if isinstance(msg, HumanMessage)
-        or (isinstance(msg, AIMessage) and getattr(msg, "name", None) == "caller")
-    ]
+    filtered: list[HumanMessage | AIMessage] = []
+    for msg in messages[start_idx:]:
+        if isinstance(msg, HumanMessage):
+            if parse_handover_command(msg) is None:
+                filtered.append(msg)
+            continue
+
+        if isinstance(msg, AIMessage):
+            role_name = getattr(msg, "name", None)
+            if role_name == "caller":
+                filtered.append(msg)
+            elif role_name == "trainer":
+                filtered.append(HumanMessage(content=str(msg.content)))
 
     return get_buffer_string(
         filtered,
