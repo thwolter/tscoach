@@ -9,8 +9,10 @@ async def format_history(state: TrainingState) -> str:
     """Format conversation history from training state as a single string."""
     history = []
     for msg in state.messages:
-        role = "Caller" if msg.type == "ai" else "Learner"
-        history.append(f"{role}: {msg.content}")
+        if msg.name == "caller":
+            history.append(f"Caller: {msg.content}")
+        elif msg.name == "learner":
+            history.append(f"Learner: {msg.content}")
     return "\n".join(history)
 
 
