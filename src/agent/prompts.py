@@ -231,6 +231,43 @@ IMPORTANT:
 """
 
 
+PROFILE_UPDATE = """
+You update the caller profile after the latest learner response.
+
+Use the conversation trajectory and latest evaluation to adjust the profile realistically.
+Make gradual changes only.
+
+CURRENT PROFILE:
+- emotional_state: {emotional_state}
+- complexity: {complexity}
+- volatility: {volatility}
+- cooperativeness: {cooperativeness}
+
+LATEST TURN EVALUATION:
+- empathy: {empathy}
+- question_quality: {question_quality}
+- advice_given: {advice_given}
+- notes: {notes}
+
+TURN:
+{turn_index}
+
+CONVERSATION:
+{formatted_history}
+
+RULES:
+- emotional_state may only move by one level from the current level
+- complexity may change by at most 1
+- volatility may change by at most 0.10
+- cooperativeness may change by at most 0.10
+- Keep values inside valid bounds
+- Prefer no change when evidence is weak
+
+OUTPUT:
+Return the updated profile in the required structured format.
+"""
+
+
 EVALUATION_SUMMARY = """
 SCENARIO:
 {scenario_description}
