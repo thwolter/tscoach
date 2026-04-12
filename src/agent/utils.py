@@ -31,7 +31,7 @@ def get_profile(difficulty: int) -> CallerProfile:
 
     # --- Core behavioural drivers (smooth mapping)
     base_volatility = 0.2 + 0.6 * x  # 0.2 → 0.8
-    base_cooperativeness = 0.85 - 0.5 * x  # 0.85 → 0.35
+    base_cooperativeness = 0.85 - 0.7 * x  # 0.85 → 0.15
     base_complexity = 1 + 4 * x  # 1 → 5
 
     # --- Add realistic noise (Gaussian)
