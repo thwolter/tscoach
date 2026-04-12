@@ -6,7 +6,8 @@ from langchain_core.messages import HumanMessage, SystemMessage
 
 from agent.llm import llm
 from agent.prompts import EVALUATION_SUMMARY, LEARNER_EVALUATION, TURN_FEEDBACK
-from agent.state import Aggregates, TrainingState, TurnEvaluation
+from agent.schemas import Aggregates, TurnEvaluation
+from agent.state import TrainingState
 from agent.utils import format_history, language_constraint
 
 

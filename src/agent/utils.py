@@ -2,7 +2,8 @@
 
 import random
 
-from agent.state import CallerProfile, TrainingState
+from agent.schemas import CallerProfile
+from agent.state import TrainingState
 
 
 async def format_history(state: TrainingState) -> str:

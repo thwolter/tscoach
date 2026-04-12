@@ -7,7 +7,8 @@ from langchain_core.output_parsers import StrOutputParser
 
 from agent.llm import llm
 from agent.prompts import PARSE_ONBOARDING, SCENARIO_SETUP
-from agent.state import OnboardingSetup, Scenario, TrainingConfig, TrainingState
+from agent.schemas import OnboardingSetup, Scenario, TrainingConfig
+from agent.state import TrainingState
 from agent.utils import get_profile, language_constraint
 
 DEFAULT_LANGUAGE = "en"

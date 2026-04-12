@@ -6,7 +6,8 @@ from langchain_core.messages import HumanMessage, SystemMessage
 
 from agent.llm import llm
 from agent.prompts import CALLER_SIMULATION, PHASE_DECISION
-from agent.state import PhaseDecision, TrainingState
+from agent.schemas import PhaseDecision
+from agent.state import TrainingState
 from agent.utils import format_history, language_constraint
 
 
