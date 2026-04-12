@@ -72,52 +72,44 @@ async def caller_simulation(state: TrainingState) -> dict:
 
     formatted_history = await format_history(state)
 
-    simulation = CALLER_SIMULATION.format(
+    if not formatted_history.strip():
+        formatted_history = "\n\nIMPORTANT: This is the first message. The first word MUST be a greeting."
+
+    system_prompt = CALLER_SIMULATION.format(
         scenario_description=state.scenario.description,
         language=state.config.language,
         emotional_state=state.caller_profile.emotional_state,
         complexity=state.caller_profile.complexity,
         volatility=state.caller_profile.volatility,
         cooperativeness=state.caller_profile.cooperativeness,
-        formatted_history=formatted_history,
     )
-
-    if not formatted_history.strip():
-        simulation += "\n\nIMPORTANT: This is the first message. The first word MUST be a greeting."
 
     messages = [
         SystemMessage(
-            content=(
-                "You simulate a telephone counselling caller. Stay in role. "
-                + language_constraint(state.config.language)
-            )
+            content=(system_prompt + language_constraint(state.config.language))
         ),
-        HumanMessage(content=simulation),
+        HumanMessage(content=formatted_history),
     ]
 
     response = await llm.ainvoke(messages)
+    caller_message = response.model_copy(update={"name": "caller"})
 
     return {
-        "messages": [response],
+        "messages": [caller_message],
         "turn_index": state.turn_index + 1,
     }
 
 
 def await_learner_input(state: TrainingState) -> dict:
     """Prompt for learner input and return it as a human message."""
-    prompt = "What do you want to say to the caller?"
-    if state.per_turn_feedback:
-        latest_feedback = state.per_turn_feedback[-1]
-        prompt = (
-            "Feedback on your last response:\n"
-            f"{latest_feedback}\n\n"
-            "What do you want to say to the caller?"
-        )
-
-    learner_input = interrupt(prompt)
+    learner_input = interrupt("")
+    message = HumanMessage(
+        content=learner_input,
+        name="learner",
+    )
 
     return {
-        "messages": [HumanMessage(content=learner_input)],
+        "messages": [message],
     }
 
 
@@ -293,7 +285,7 @@ async def per_turn_feedback(state: TrainingState) -> dict:
     ]
 
     response = await llm.ainvoke(messages)
-    return {"per_turn_feedback": [response.content]}
+    return {"messages": [response], "per_turn_feedback": [response.content]}
 
 
 async def final_feedback(state: TrainingState) -> dict:
@@ -324,4 +316,4 @@ async def final_feedback(state: TrainingState) -> dict:
 
     response = await llm.ainvoke(messages)
 
-    return {"final_feedback": response.content}
+    return {"messages": [response], "final_feedback": response.content}
