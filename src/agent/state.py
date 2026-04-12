@@ -27,12 +27,8 @@ class TrainingState(BaseModel):
     evaluations: Annotated[list[TurnEvaluation], add] = Field(default_factory=list)
 
     aggregates: Aggregates | None = None
-    per_turn_feedback: Annotated[list[str], add] = Field(default_factory=list)
-    final_feedback: str | None = None
 
     phase: Literal["opening", "exploration", "closing"] = "opening"
 
     turn_index: int = 0
     finished: bool = False
-
-    next: str | None = None

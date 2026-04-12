@@ -5,6 +5,36 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 
+class OnboardingSetup(BaseModel):
+    """Setup for the onboarding process."""
+
+    category: str | None = Field(
+        description="Scenario topic or context explicitly provided by the user"
+    )
+    difficulty: int | None = Field(
+        description="Difficulty level from 1 (easy) to 10 (very difficult)"
+    )
+    language: str | None = Field(
+        description="Language for the conversation. Inferred from the user prompt if not stated explicitly.",
+        max_length=2,
+    )
+    feedback_mode: Literal["none", "per_turn", "final", "both"] | None = Field(
+        description="Feedback mode: none, per_turn, final, or both; only if explicitly stated"
+    )
+    max_turns: int | None = Field(
+        description="Maximum number of turns in the conversation; only if explicitly stated",
+        ge=1,
+        le=10,
+    )
+
+    missing_fields: list[str] = Field(
+        description="List of required fields that are missing or invalid"
+    )
+    clarification_question: str | None = Field(
+        description="Short question asking for missing required fields"
+    )
+
+
 class Scenario(BaseModel):
     """Scenario description."""
 
@@ -49,6 +79,15 @@ class TurnEvaluation(BaseModel):
     )
 
 
+class Aggregates(BaseModel):
+    """Aggregated metrics for the training session."""
+
+    avg_empathy: float = 0.0
+    avg_question_quality: float = 0.0
+    advice_ratio: float = 0.0
+    total_turns: int = 0
+
+
 class PhaseDecision(BaseModel):
     """Decision about the next phase of the conversation."""
 
@@ -61,48 +100,9 @@ class PhaseDecision(BaseModel):
     rationale: str = Field(..., description="Short explanation of the decision.")
 
 
-class Aggregates(BaseModel):
-    """Aggregated metrics for the training session."""
-
-    avg_empathy: float = 0.0
-    avg_question_quality: float = 0.0
-    advice_ratio: float = 0.0
-    total_turns: int = 0
-
-
 class TrainingConfig(BaseModel):
     """Configuration for the training session."""
 
     max_turns: int = 3
     feedback_mode: Literal["none", "per_turn", "final", "both"] = "both"
     language: str = "de"
-
-
-class OnboardingSetup(BaseModel):
-    """Setup for the onboarding process."""
-
-    category: str | None = Field(
-        description="Scenario topic or context explicitly provided by the user"
-    )
-    difficulty: int | None = Field(
-        description="Difficulty level from 1 (easy) to 10 (very difficult)"
-    )
-    language: str | None = Field(
-        description="Language for the conversation. Inferred from the user prompt if not stated explicitly.",
-        max_length=2,
-    )
-    feedback_mode: Literal["none", "per_turn", "final", "both"] | None = Field(
-        description="Feedback mode: none, per_turn, final, or both; only if explicitly stated"
-    )
-    max_turns: int | None = Field(
-        description="Maximum number of turns in the conversation; only if explicitly stated",
-        ge=1,
-        le=10,
-    )
-
-    missing_fields: list[str] = Field(
-        description="List of required fields that are missing or invalid"
-    )
-    clarification_question: str | None = Field(
-        description="Short question asking for missing required fields"
-    )
