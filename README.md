@@ -21,6 +21,16 @@ The graph is defined in `src/agent/graph.py`.
 6. `decide_phase`: decides whether to continue or finish.
 7. `per_turn_feedback` and/or `final_feedback`: returns coaching output.
 
+### Trainer Handover Command
+
+The learner can hand over the live call to the trainer:
+
+- Send `/handover trainer` (or `/handover`) to request handover.
+- Send `/handover confirm` to activate trainer takeover.
+- Send `/handover cancel` to abort the request.
+
+After confirmation, the trainer continues the counsellor side of the conversation and the caller keeps responding until the conversation ends.
+
 ## Requirements
 
 - Python 3.11+
