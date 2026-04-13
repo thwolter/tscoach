@@ -17,6 +17,7 @@ services:
             POSTGRES_PASSWORD: postgres
         volumes:
             - langgraph-data:/var/lib/postgresql/data
+            - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
         healthcheck:
             test: pg_isready -U postgres
             start_period: 10s
@@ -29,8 +30,6 @@ services:
           context: .
           dockerfile: Dockerfile
         image: "langgraph-app"
-        ports:
-            - "8123:8000"
         depends_on:
             langgraph-redis:
                 condition: service_healthy
@@ -42,3 +41,21 @@ services:
             POSTGRES_URI: postgres://postgres:postgres@langgraph-postgres:5432/postgres?sslmode=disable
             LANGSMITH_API_KEY: ${LANGSMITH_API_KEY}
             OPENAI_API_KEY: ${OPENAI_API_KEY}
+    auth-gateway:
+        pull_policy: never
+        build:
+          context: .
+          dockerfile: Dockerfile
+        image: "langgraph-app"
+        entrypoint: ["python", "-m", "uvicorn", "agent.gateway:app", "--host", "0.0.0.0", "--port", "8000"]
+        ports:
+            - "8123:8000"
+        depends_on:
+            langgraph-api:
+                condition: service_started
+            langgraph-postgres:
+                condition: service_healthy
+        environment:
+            AGENT_API_KEY_PEPPER: ${AGENT_API_KEY_PEPPER}
+            POSTGRES_URI: postgres://postgres:postgres@langgraph-postgres:5432/postgres?sslmode=disable
+            LANGGRAPH_UPSTREAM_URL: http://langgraph-api:8000

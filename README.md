@@ -57,6 +57,12 @@ Add at least:
 OPENAI_API_KEY=your_key_here
 ```
 
+Add authentication settings:
+
+```env
+AGENT_API_KEY_PEPPER=your-long-random-secret
+```
+
 Optional for tracing:
 
 ```env
@@ -88,6 +94,31 @@ Runtime config is stored in `TrainingConfig` (`src/agent/schemas.py`):
 - `max_turns`: maximum conversation turns (default `3` in schema)
 - `feedback_mode`: `none`, `per_turn`, `final`, `both` (default `both`)
 
+## API Key Security
+
+Docker Compose deployments are protected by `auth-gateway` (FastAPI) in front of `langgraph-api`.
+
+- Supported headers: `Authorization: Bearer sk-...`, `X-API-Key: sk-...`
+- Validation model: API keys are never stored in plaintext.
+- Incoming keys are HMAC-SHA256 hashed with `AGENT_API_KEY_PEPPER`.
+- Hashes are looked up in Postgres table `agent_api_keys`.
+- Only `auth-gateway` is exposed publicly on port `8123`; `langgraph-api` stays internal.
+
+Generate a new key and insert its hash into Postgres:
+
+```bash
+docker compose exec -T auth-gateway \
+  python scripts/generate_api_key.py --name chat-ui --scope chat:invoke
+```
+
+The script prints:
+
+1. The plaintext API key (store it once in your client secret manager).
+2. The hash is inserted directly into `agent_api_keys`.
+
+To revoke a key, set `is_active` to `false` and redeploy.
+After `docker compose down -v`, run the key-generation script again to create and insert fresh keys.
+
 ## Development
 
 Useful commands from the `Makefile`:
@@ -117,5 +148,5 @@ src/agent/
 
 ## Notes
 
-- This repository currently has test scaffolding under `tests/`, but no concrete test cases yet.
+- This repository includes unit tests under `tests/unit_tests/`.
 - To switch model/provider, update `src/agent/llm.py`.
