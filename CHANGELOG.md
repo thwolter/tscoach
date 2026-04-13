@@ -1,3 +1,10 @@
+## 0.3.0 (2026-04-13)
+
+### Feat
+
+- **docker**: add docker-compose setup for local development
+- **agent**: add new handover state and update dependency constraints
+
 ## 0.2.0 (2026-04-12)
 
 ### Feat
