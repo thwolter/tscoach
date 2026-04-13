@@ -31,7 +31,7 @@ services:
         build:
           context: .
           dockerfile: Dockerfile
-        image: "tscoach"
+        image: "langgraph-app"
         ports:
             - "8123:8000"
         depends_on:
