@@ -24,6 +24,7 @@ services:
             retries: 5
             interval: 5s
     langgraph-api:
+        pull_policy: never
         build:
           context: .
           dockerfile: Dockerfile
@@ -36,6 +37,7 @@ services:
             langgraph-postgres:
                 condition: service_healthy
         environment:
+            FORWARDED_ALLOW_IPS: "*"
             REDIS_URI: redis://langgraph-redis:6379
             POSTGRES_URI: postgres://postgres:postgres@langgraph-postgres:5432/postgres?sslmode=disable
             LANGSMITH_API_KEY: ${LANGSMITH_API_KEY}
