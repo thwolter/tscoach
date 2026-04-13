@@ -56,6 +56,9 @@ services:
             langgraph-postgres:
                 condition: service_healthy
         environment:
-            AGENT_API_KEY_PEPPER: ${AGENT_API_KEY_PEPPER}
             POSTGRES_URI: postgres://postgres:postgres@langgraph-postgres:5432/postgres?sslmode=disable
+            JWT_SECRET: ${JWT_SECRET}
+            JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
+            JWT_EXPIRE_MINUTES: ${JWT_EXPIRE_MINUTES:-60}
+            ADMIN_SESSION_SECRET: ${ADMIN_SESSION_SECRET}
             LANGGRAPH_UPSTREAM_URL: http://langgraph-api:8000

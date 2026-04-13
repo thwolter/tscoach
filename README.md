@@ -60,7 +60,8 @@ OPENAI_API_KEY=your_key_here
 Add authentication settings:
 
 ```env
-AGENT_API_KEY_PEPPER=your-long-random-secret
+JWT_SECRET=your-long-random-secret
+ADMIN_SESSION_SECRET=your-admin-session-secret
 ```
 
 Optional for tracing:
@@ -94,30 +95,57 @@ Runtime config is stored in `TrainingConfig` (`src/agent/schemas.py`):
 - `max_turns`: maximum conversation turns (default `3` in schema)
 - `feedback_mode`: `none`, `per_turn`, `final`, `both` (default `both`)
 
-## API Key Security
+## JWT Authentication and Admin Panel
 
 Docker Compose deployments are protected by `auth-gateway` (FastAPI) in front of `langgraph-api`.
 
-- Supported headers: `Authorization: Bearer sk-...`, `X-API-Key: sk-...`
-- Validation model: API keys are never stored in plaintext.
-- Incoming keys are HMAC-SHA256 hashed with `AGENT_API_KEY_PEPPER`.
-- Hashes are looked up in Postgres table `agent_api_keys`.
+- Login endpoint: `POST /auth/login` with JSON body `{ "username": "...", "password": "..." }`
+- Session endpoint: `GET /auth/me` with header `Authorization: Bearer <jwt>`
+- Validation model: user passwords are stored as bcrypt hashes in Postgres.
+- JWTs are signed with backend-only `JWT_SECRET`.
 - Only `auth-gateway` is exposed publicly on port `8123`; `langgraph-api` stays internal.
 
-Generate a new key and insert its hash into Postgres:
+Create the initial admin user:
 
 ```bash
 docker compose exec -T auth-gateway \
-  python scripts/generate_api_key.py --name chat-ui --scope chat:invoke
+  python scripts/create_admin_user.py --username admin --password 'ChangeMe123!'
 ```
 
-The script prints:
+Then use:
 
-1. The plaintext API key (store it once in your client secret manager).
-2. The hash is inserted directly into `agent_api_keys`.
+- `http://localhost:8123/admin` for SQLAdmin-based admin user and panel management.
+- The admin can create users, set/update user passwords, and assign panel access rows.
 
-To revoke a key, set `is_active` to `false` and redeploy.
-After `docker compose down -v`, run the key-generation script again to create and insert fresh keys.
+To disable access, set `is_active=false` for the target user.
+
+## How To Use (Docker Auth Setup)
+
+1. Set env vars in `.env` (copy from `.env.example`), especially:
+   - `JWT_SECRET`
+   - `ADMIN_SESSION_SECRET`
+   - `JWT_ALGORITHM`
+   - `JWT_EXPIRE_MINUTES`
+2. Start the stack:
+
+```bash
+docker compose up --build
+```
+
+3. Create the first admin user:
+
+```bash
+docker compose exec -T auth-gateway \
+  python scripts/create_admin_user.py --username admin --password 'ChangeMe123!'
+```
+
+4. Open Admin UI:
+   - `http://localhost:8123/admin/`
+
+5. Frontend login flow:
+   - Call `POST /auth/login` with `username` and `password`.
+   - Store returned `access_token` for the session.
+   - Send `Authorization: Bearer <access_token>` on API requests.
 
 ## Development
 
