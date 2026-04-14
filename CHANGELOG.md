@@ -1,3 +1,30 @@
+## 0.4.0 (2026-04-14)
+
+### BREAKING CHANGE
+
+- Authentication database schema and admin user management are now handled by `langgraph-secure-gateway`. Update deployment workflows
+- Authentication logic now relies on `langgraph-secure-gateway`. Remove old authentication code and update configurations and scripts to use the new package.
+- Replaced `agent_api_keys` table with `users` and `panel_access` tables. Update schema, environment variables, and authentication logic accordingly.
+- Deployments now require `AGENT_API_KEY_PEPPER` and a populated `agent_api_keys` Postgres table. Update environment variables and database schema accordingly.
+
+### Feat
+
+- **dependencies**: add `ipykernel` dependency and update lockfile
+- **docker**: add health check and configurable port for `langgraph-app`
+- **auth**: migrate from API key-based auth to JWT and user authentication system
+- **auth**: implement API key-based authentication for LangGraph deployments
+- **docker**: add pull policy and forwarded IPs to `langgraph-api` in `docker-compose.yaml`
+- **docker**: add Dockerfile and update docker-compose with `langgraph-app` image
+- **docker**: add build context for `langgraph-api` in `docker-compose.yaml`
+- **config**: reintroduce `.env.example` with default environment variables
+
+### Refactor
+
+- **auth**: remove database initialization scripts and admin user creation logic
+- **auth**: remove legacy authentication-related modules
+- **docker**: remove unused port bindings from `docker-compose.yaml`
+- **docker**: rename `docker-compose.yml` to `docker-compose.yaml`
+
 ## 0.3.0 (2026-04-13)
 
 ### Feat
