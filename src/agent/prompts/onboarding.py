@@ -1,15 +1,38 @@
 """Prompts for onboarding and scenario setup."""
 
 PARSE_ONBOARDING = """
-EExtract structured scenario setup from the user input.
+Extract structured scenario setup from the user input.
 
 REQUIRED FIELDS
-- category
+- category (string)
 - difficulty (integer 1–10)
-- language
+- language (ISO code, e.g. "en", "de")
 
 OPTIONAL FIELDS
-- feedback_mode
+- feedback_mode (Literal['none', 'per_turn', 'final', 'both'], default = "both")
+
+INPUT HANDLING (IMPORTANT)
+- The user may provide values in any order and format (e.g. comma-separated, short phrases, mixed languages).
+- Identify fields based on content, not position.
+
+FIELD EXTRACTION RULES
+- difficulty:
+  - Extract any standalone integer between 1 and 10.
+  - If multiple numbers exist, choose the most plausible one.
+- language:
+  - Accept both language names (e.g. "Deutsch", "German") and codes ("de", "en").
+  - Map to ISO codes.
+  - Only assign if confidence is high.
+- category:
+  - Any remaining meaningful descriptor that is not a number or language.
+  - Must be explicitly present; do not generalise or invent.
+
+AMBIGUITY HANDLING
+- If a value could map to multiple fields:
+  1. Prefer difficulty (numeric 1–10)
+  2. Then language (clear language indicator)
+  3. Otherwise category
+- If unclear → set field to null
 
 LANGUAGE DETECTION
 - Infer the language from the user input if possible.
@@ -41,6 +64,17 @@ Input: "Hi"
 
 Clarification:
 "To get started, I just need a few details: please specify the category, difficulty (1–10), and language. Optionally, you can also set the feedback mode (none, per_turn, final, both; default is 'both')."
+
+Input: "Kids, deutsch, 10"
+→
+{
+  "category": "Kids",
+  "difficulty": 10,
+  "language": "de",
+  "feedback_mode": null,
+  "missing_fields": [],
+  "clarification_question": null
+}
 """
 
 

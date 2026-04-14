@@ -28,7 +28,7 @@ async def onboarding(state: TrainingState) -> dict:
     structured_llm = llm.with_structured_output(OnboardingSetup)
     setup = cast(OnboardingSetup, await structured_llm.ainvoke(messages))
 
-    if any(f in setup.missing_fields for f in ('category', 'difficulty')):
+    if setup.clarification_question:
         return {
             'messages': [AIMessage(content=setup.clarification_question)],
         }

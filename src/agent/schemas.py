@@ -24,7 +24,6 @@ class OnboardingSetup(BaseModel):
     max_turns: int | None = Field(
         description='Maximum number of turns in the conversation; only if explicitly stated',
         ge=1,
-        le=10,
     )
 
     missing_fields: list[str] = Field(
@@ -104,20 +103,26 @@ class Aggregates(BaseModel):
 
 
 class PhaseDecision(BaseModel):
-    """Decision about the next phase of the conversation."""
+    """Decision about conversation phase and termination."""
 
     phase: Literal['opening', 'exploration', 'closing'] = Field(
-        ..., description='Current phase of the counselling conversation.'
+        ..., description='Current conversation phase.'
     )
-    finished: bool = Field(
-        ..., description='Whether the conversation should end based on caller state.'
+
+    finished: bool = Field(..., description='Whether the conversation should end now.')
+
+    rationale: str = Field(
+        ..., description='Brief reason for the decision (1–2 sentences).'
     )
-    rationale: str = Field(..., description='Short explanation of the decision.')
+
+    termination_signal: Literal['none', 'implicit', 'explicit'] = Field(
+        ..., description='Detected signal to end the conversation.'
+    )
 
 
 class TrainingConfig(BaseModel):
     """Configuration for the training session."""
 
-    max_turns: int = 3
+    max_turns: int | None = None
     feedback_mode: Literal['none', 'per_turn', 'final', 'both'] = 'both'
     language: str = 'de'

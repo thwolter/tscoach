@@ -113,6 +113,7 @@ async def per_turn_feedback(state: TrainingState) -> dict:
         question_quality=latest_evaluation.question_quality,
         advice_given='yes' if latest_evaluation.advice_given else 'no',
         notes=latest_evaluation.notes or '',
+        turn_feedbacks=state.per_turn_feedback,
     ) + language_constraint(state.config.language)
 
     messages = [

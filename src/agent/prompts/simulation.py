@@ -122,10 +122,7 @@ PHASE_DECISION = """
 SCENARIO:
 {scenario_description}
 
-TARGET LANGUAGE FOR NATURAL-LANGUAGE FIELDS:
-{language}
-
-CALLER PROFILE:
+CURRENT CALLER PROFILE:
 - emotional_state: {emotional_state}
 - volatility: {volatility}
 - cooperativeness: {cooperativeness}
@@ -134,19 +131,47 @@ CURRENT PHASE:
 {phase}
 
 TURN:
-{turn_index} / {max_turns}
-
-CONVERSATION:
-{formatted_history}
+{turn_index}
 
 TASK:
-- Determine the current phase
+- Determine the current phase (opening, exploration, closing)
 - Decide whether the conversation should finish
 
-IMPORTANT:
-- Focus on the caller's emotional trajectory
-- Do not end too early
-- Closing should only happen when the caller is stabilising
+DECISION LOGIC:
+
+1) PHASE DETECTION
+- opening → initial contact, problem framing, little emotional depth yet
+- exploration → active emotional processing, clarification, deepening
+- closing → stabilisation, relief, summarising, looking forward
+
+2) TERMINATION SIGNALS (critical)
+Detect whether the conversation should end based on:
+
+a) EXPLICIT SIGNALS
+- Caller expresses desire to end (e.g. "Danke, das hilft mir schon", "Ich glaube, das reicht mir")
+- Learner initiates closing (e.g. summarising, goodbye)
+
+b) IMPLICIT SIGNALS
+- Emotional stabilisation (less distress, more clarity)
+- Problem feels contained or structured
+- Natural conversational slowdown
+
+c) BLOCKING CONDITIONS (do NOT end)
+- High distress still present
+- Escalating emotions
+- Open unresolved core issue
+
+3) PRIORITY RULE
+- Explicit termination signals override phase progression
+- If explicit signal + no acute distress → move to closing and finish
+
+4) SAFETY CHECK
+- Never end if caller is still highly distressed or unstable,
+  even if a weak closing signal appears
+
+OUTPUT REQUIREMENTS:
+- Keep rationale concise (1–2 sentences)
+- Base decision on BOTH emotional trajectory AND interaction signals
 """
 
 

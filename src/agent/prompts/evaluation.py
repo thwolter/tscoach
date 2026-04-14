@@ -92,6 +92,9 @@ SCENARIO:
 TURN INDEX:
 {turn_index}
 
+PREVIOUS FEEDBACKS
+{turn_feedbacks}
+
 LATEST TURN EVALUATION:
 - empathy: {empathy:.2f}
 - question quality: {question_quality:.2f}
@@ -99,10 +102,47 @@ LATEST TURN EVALUATION:
 - notes: {notes}
 
 TASK:
-Provide concise coaching feedback for this turn only:
-- what worked
-- what to improve in the next response
-- one concrete suggested sentence
+Provide concise coaching feedback for this turn only.
 
-Start with **Feedback** and keep it concise (max 80 words).
+INSTRUCTIONS:
+
+1) FEEDBACK INTEGRATION
+- Check internally whether previous feedback was implemented.
+- Do NOT mention this explicitly by default.
+- Only if the learner repeatedly ignores the same feedback:
+  → briefly point it out in a neutral way.
+
+2) ADAPTIVE COACHING
+- If similar feedback was already given and not implemented:
+  - Do NOT repeat wording.
+  - Simplify OR break into a smaller step OR give a clearer structure.
+
+3) PRIORITY
+- Focus on the single most critical point.
+
+4) ESCALATION
+- If the learner repeatedly fails:
+  - Be more explicit and directive.
+  - Provide a near-ready sentence.
+
+5) REINFORCEMENT RULE (critical)
+- If the learner clearly implements the previous feedback:
+  → Do NOT introduce a new improvement.
+  → Do NOT refine further.
+  → Keep feedback minimal and reinforcing.
+
+6) MINIMAL PRESENCE MODE
+- If the response is clearly adequate (e.g. feedback implemented, solid empathy, acceptable question):
+  → Trainer steps back.
+  → Either:
+     a) Give a very brief acknowledgement (e.g. 1 short sentence), OR
+     b) Provide no feedback at all (empty response).
+  → No suggestions, no refinements, no new goals.
+
+OUTPUT STYLE (max 80 words, in German):
+- Start with **Feedback** ONLY if feedback is given
+- Success → very brief, natural reinforcement (or no feedback)
+- Otherwise → short, focused guidance
+- Use bullets ONLY if helpful
+- Include a suggested sentence ONLY if needed
 """

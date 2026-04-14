@@ -183,33 +183,25 @@ async def decide_phase(state: TrainingState) -> dict:
 
     formatted_history = await format_conversation_history(state)
 
-    decision_msg = PHASE_DECISION.format(
+    system_prompt = PHASE_DECISION.format(
         scenario_description=state.scenario.description,
-        language=state.config.language,
         emotional_state=state.caller_profile.emotional_state,
         volatility=state.caller_profile.volatility,
         cooperativeness=state.caller_profile.cooperativeness,
         phase=state.phase,
-        formatted_history=formatted_history,
         turn_index=state.turn_index,
-        max_turns=state.config.max_turns,
-    )
+    ) + language_constraint(state.config.language)
 
     messages = [
-        SystemMessage(
-            content=(
-                'You control the flow of a counselling conversation. '
-                + language_constraint(state.config.language)
-            )
-        ),
-        HumanMessage(content=decision_msg),
+        SystemMessage(content=system_prompt),
+        HumanMessage(content=formatted_history),
     ]
 
     structured_llm = llm.with_structured_output(PhaseDecision)
     decision = cast(PhaseDecision, await structured_llm.ainvoke(messages))
 
     finished = decision.finished
-    if state.turn_index >= state.config.max_turns:
+    if state.config.max_turns and state.turn_index >= state.config.max_turns:
         finished = True
 
     return {
