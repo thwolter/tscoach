@@ -102,8 +102,9 @@ Docker Compose deployments are protected by `auth-gateway` (FastAPI) in front of
 - Login endpoint: `POST /auth/login` with JSON body `{ "username": "...", "password": "..." }`
 - Session endpoint: `GET /auth/me` with header `Authorization: Bearer <jwt>`
 - Validation model: user passwords are stored as bcrypt hashes in Postgres.
+- Auth tables are auto-created by the gateway when `AUTH_DB_AUTO_INIT=true`.
 - JWTs are signed with backend-only `JWT_SECRET`.
-- Only `auth-gateway` is exposed publicly on port `8123`; `langgraph-api` stays internal.
+- Only `auth-gateway` should be exposed publicly by your platform ingress; `langgraph-api` stays internal.
 
 Create the initial admin user:
 
