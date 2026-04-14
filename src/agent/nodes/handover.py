@@ -31,7 +31,6 @@ async def handover_command(state: TrainingState) -> dict:
 
     if action == 'end':
         return {
-            'handover_requested': False,
             'handover_active': False,
             'command_mode': 'end_requested',
             'finished': True,
@@ -45,56 +44,17 @@ async def handover_command(state: TrainingState) -> dict:
 
     if action == 'request':
         return {
-            'handover_requested': True,
-            'command_mode': 'await_confirmation',
+            'handover_active': True,
+            'command_mode': 'trainer_takeover',
             'messages': [
                 AIMessage(
-                    content=(
-                        'Handover requested. Type `/handover confirm` to let the trainer '
-                        'complete the conversation, or `/handover cancel` to continue yourself.'
-                    )
+                    content='Trainer handover activated. I will now continue with the caller.'
                 )
             ],
-            'audit_log': [f'{_utc_now_iso()} handover_requested'],
+            'audit_log': [f'{_utc_now_iso()} handover_activated'],
         }
 
-    if action == 'cancel':
-        return {
-            'handover_requested': False,
-            'handover_active': False,
-            'command_mode': 'none',
-            'messages': [
-                AIMessage(
-                    content='Handover cancelled. You can continue as the learner.'
-                )
-            ],
-            'audit_log': [f'{_utc_now_iso()} handover_cancelled'],
-        }
-
-    if not state.handover_requested:
-        return {
-            'command_mode': 'await_confirmation',
-            'messages': [
-                AIMessage(
-                    content=(
-                        'No pending handover request found. Start with `/handover trainer` '
-                        'or `/handover` first.'
-                    )
-                )
-            ],
-        }
-
-    return {
-        'handover_requested': False,
-        'handover_active': True,
-        'command_mode': 'trainer_takeover',
-        'messages': [
-            AIMessage(
-                content='Trainer handover confirmed. I will now continue with the caller.'
-            )
-        ],
-        'audit_log': [f'{_utc_now_iso()} handover_confirmed'],
-    }
+    return {'command_mode': 'none'}
 
 
 async def trainer_takeover(state: TrainingState) -> dict:
@@ -126,6 +86,5 @@ async def trainer_takeover(state: TrainingState) -> dict:
     return {
         'messages': [trainer_message],
         'command_mode': 'none',
-        'handover_requested': False,
         'handover_active': False,
     }
