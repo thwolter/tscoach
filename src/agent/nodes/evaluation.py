@@ -117,6 +117,7 @@ async def per_turn_feedback(state: TrainingState) -> dict:
         return {}
 
     latest_evaluation = state.evaluations[-1]
+    formatted_history = await format_conversation_history(state)
 
     system_prompt = TURN_FEEDBACK.format(
         scenario_description=state.scenario.description,
@@ -126,6 +127,7 @@ async def per_turn_feedback(state: TrainingState) -> dict:
         advice_given='yes' if latest_evaluation.advice_given else 'no',
         notes=latest_evaluation.notes or '',
         turn_feedbacks=state.per_turn_feedback,
+        formatted_history=formatted_history,
     ) + language_constraint(state.config.language)
 
     messages = [

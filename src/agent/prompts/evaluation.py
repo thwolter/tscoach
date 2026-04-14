@@ -95,6 +95,9 @@ TURN INDEX:
 PREVIOUS FEEDBACKS
 {turn_feedbacks}
 
+CONVERSATION HISTORY:
+{formatted_history}
+
 LATEST TURN EVALUATION:
 - empathy: {empathy:.2f}
 - question quality: {question_quality:.2f}
@@ -114,7 +117,12 @@ INSTRUCTIONS:
 
 2) ADAPTIVE COACHING
 - If similar feedback was already given and not implemented:
-  - Do NOT repeat wording.
+  - Do NOT repeat wording or sentence structures from previous suggestions.
+  - Avoid proposing the same type of question (e.g. repeated categorisation like "was ist schlimmer").
+  - Instead, change ONE of the following:
+    → the focus (e.g. from sorting → concrete situation)
+    → the question type (e.g. from binary → open or descriptive)
+    → the depth (e.g. from general → specific moment)
   - Simplify OR break into a smaller step OR give a clearer structure.
 
 3) PRIORITY
@@ -124,6 +132,7 @@ INSTRUCTIONS:
 - If the learner repeatedly fails:
   - Be more explicit and directive.
   - Provide a near-ready sentence.
+  - Ensure the suggested sentence is clearly different from previous ones.
 
 5) REINFORCEMENT RULE (critical)
 - If the learner clearly implements the previous feedback:
