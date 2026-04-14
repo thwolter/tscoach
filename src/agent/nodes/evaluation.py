@@ -59,13 +59,13 @@ async def aggregate_evaluation(
 async def behaviour_analysis(state: TrainingState) -> dict:
     """Evaluate the latest learner reply and refresh aggregate metrics."""
     last_user_message = state.messages[-1]
-    if last_user_message.type != "human":
-        raise ValueError("Last message is not from the user")
+    if last_user_message.type != 'human':
+        raise ValueError('Last message is not from the user')
 
     formatted_history = await format_conversation_history(state)
 
     if not state.scenario:
-        raise ValueError("Scenario is not set")
+        raise ValueError('Scenario is not set')
 
     evaluation_msg = LEARNER_EVALUATION.format(
         scenario_description=state.scenario.description,
@@ -78,7 +78,7 @@ async def behaviour_analysis(state: TrainingState) -> dict:
     messages = [
         SystemMessage(
             content=(
-                "You evaluate counselling responses. "
+                'You evaluate counselling responses. '
                 + language_constraint(state.config.language)
             )
         ),
@@ -91,15 +91,15 @@ async def behaviour_analysis(state: TrainingState) -> dict:
     aggregates = await aggregate_evaluation(response, state)
 
     return {
-        "evaluations": [response],
-        "aggregates": aggregates,
+        'evaluations': [response],
+        'aggregates': aggregates,
     }
 
 
 async def per_turn_feedback(state: TrainingState) -> dict:
     """Generate coaching feedback for the most recent evaluated turn."""
     if not state.scenario:
-        raise ValueError("Scenario is not set")
+        raise ValueError('Scenario is not set')
 
     if not state.evaluations:
         return {}
@@ -111,8 +111,8 @@ async def per_turn_feedback(state: TrainingState) -> dict:
         turn_index=latest_evaluation.turn_index,
         empathy=latest_evaluation.empathy,
         question_quality=latest_evaluation.question_quality,
-        advice_given="yes" if latest_evaluation.advice_given else "no",
-        notes=latest_evaluation.notes or "",
+        advice_given='yes' if latest_evaluation.advice_given else 'no',
+        notes=latest_evaluation.notes or '',
     ) + language_constraint(state.config.language)
 
     messages = [
@@ -121,13 +121,13 @@ async def per_turn_feedback(state: TrainingState) -> dict:
     ]
 
     response = await llm.ainvoke(messages)
-    return {"messages": [response], "per_turn_feedback": [response.content]}
+    return {'messages': [response], 'per_turn_feedback': [response.content]}
 
 
 async def end_summary(state: TrainingState) -> dict:
     """Generate a brief end-of-session wrap-up of the conversation trajectory."""
     if not state.scenario:
-        raise ValueError("Scenario is not set")
+        raise ValueError('Scenario is not set')
 
     formatted_history = await format_conversation_history(state)
 
@@ -141,7 +141,7 @@ async def end_summary(state: TrainingState) -> dict:
     messages = [
         SystemMessage(
             content=(
-                "You are a trainer for telephone counselling. "
+                'You are a trainer for telephone counselling. '
                 + language_constraint(state.config.language)
             )
         ),
@@ -149,7 +149,7 @@ async def end_summary(state: TrainingState) -> dict:
     ]
 
     response = await llm.ainvoke(messages)
-    return {"messages": [response], "end_summary": response.content}
+    return {'messages': [response], 'end_summary': response.content}
 
 
 def derive_training_result(aggregates: Aggregates) -> tuple[float, str]:
@@ -161,11 +161,11 @@ def derive_training_result(aggregates: Aggregates) -> tuple[float, str]:
     ) / 3
 
     if score >= 0.8:
-        band = "strong"
+        band = 'strong'
     elif score >= 0.6:
-        band = "developing"
+        band = 'developing'
     else:
-        band = "needs_practice"
+        band = 'needs_practice'
 
     return score, band
 
@@ -173,12 +173,12 @@ def derive_training_result(aggregates: Aggregates) -> tuple[float, str]:
 async def final_feedback(state: TrainingState) -> dict:
     """Generate final feedback from aggregate metrics and chat history."""
     if not state.scenario:
-        raise ValueError("Scenario is not set")
+        raise ValueError('Scenario is not set')
 
     aggregates = state.aggregates
     if aggregates is None:
         return {
-            "messages": [AIMessage(content="No evaluations available.")],
+            'messages': [AIMessage(content='No evaluations available.')],
         }
 
     score, performance_band = derive_training_result(aggregates)
@@ -196,7 +196,7 @@ async def final_feedback(state: TrainingState) -> dict:
     messages = [
         SystemMessage(
             content=(
-                "You are a trainer for telephone counselling. "
+                'You are a trainer for telephone counselling. '
                 + language_constraint(state.config.language)
             )
         ),
@@ -205,4 +205,4 @@ async def final_feedback(state: TrainingState) -> dict:
 
     response = await llm.ainvoke(messages)
 
-    return {"messages": [response], "final_feedback": response.content}
+    return {'messages': [response], 'final_feedback': response.content}

@@ -10,7 +10,7 @@ from agent.schemas import CallerProfile, CallerProfileUpdate, PhaseDecision
 from agent.state import TrainingState
 from agent.utils import format_conversation_history, language_constraint
 
-_EMOTIONAL_LEVELS = ["calm", "mild distress", "moderate distress", "severe distress"]
+_EMOTIONAL_LEVELS = ['calm', 'mild distress', 'moderate distress', 'severe distress']
 
 
 def _bounded_step(current: float, target: float, max_delta: float) -> float:
@@ -43,15 +43,15 @@ def _bounded_emotional_state(current: str, target: str) -> str:
 async def caller_simulation(state: TrainingState) -> dict:
     """Generate the next caller message from the current training state."""
     if not state.caller_profile:
-        raise ValueError("Caller profile is not set")
+        raise ValueError('Caller profile is not set')
 
     if not state.scenario:
-        raise ValueError("Scenario is not set")
+        raise ValueError('Scenario is not set')
 
     formatted_history = await format_conversation_history(state)
 
     if not formatted_history.strip():
-        formatted_history = "\n\nIMPORTANT: This is the first message. The first word MUST be a greeting."
+        formatted_history = '\n\nIMPORTANT: This is the first message. The first word MUST be a greeting.'
 
     system_prompt = CALLER_SIMULATION.format(
         scenario_description=state.scenario.description,
@@ -70,18 +70,18 @@ async def caller_simulation(state: TrainingState) -> dict:
     ]
 
     response = await llm.ainvoke(messages)
-    caller_message = response.model_copy(update={"name": "caller"})
+    caller_message = response.model_copy(update={'name': 'caller'})
 
     return {
-        "messages": [caller_message],
-        "turn_index": state.turn_index + 1,
+        'messages': [caller_message],
+        'turn_index': state.turn_index + 1,
     }
 
 
 async def update_caller_profile(state: TrainingState) -> dict:
     """Update caller profile using recent dialog evidence with bounded drift."""
     if not state.caller_profile:
-        raise ValueError("Caller profile is not set")
+        raise ValueError('Caller profile is not set')
 
     formatted_history = await format_conversation_history(state)
     latest_evaluation = state.evaluations[-1] if state.evaluations else None
@@ -92,19 +92,19 @@ async def update_caller_profile(state: TrainingState) -> dict:
         volatility=state.caller_profile.volatility,
         cooperativeness=state.caller_profile.cooperativeness,
         empathy=(
-            f"{latest_evaluation.empathy:.2f}"
+            f'{latest_evaluation.empathy:.2f}'
             if latest_evaluation is not None
-            else "n/a"
+            else 'n/a'
         ),
         question_quality=(
-            f"{latest_evaluation.question_quality:.2f}"
+            f'{latest_evaluation.question_quality:.2f}'
             if latest_evaluation is not None
-            else "n/a"
+            else 'n/a'
         ),
         advice_given=(
-            "yes" if latest_evaluation and latest_evaluation.advice_given else "no"
+            'yes' if latest_evaluation and latest_evaluation.advice_given else 'no'
         ),
-        notes=latest_evaluation.notes if latest_evaluation else "n/a",
+        notes=latest_evaluation.notes if latest_evaluation else 'n/a',
         turn_index=state.turn_index,
         formatted_history=formatted_history,
     )
@@ -112,8 +112,8 @@ async def update_caller_profile(state: TrainingState) -> dict:
     messages = [
         SystemMessage(
             content=(
-                "You update behavioural trajectories for a simulated caller. "
-                "Keep changes gradual and evidence-based. "
+                'You update behavioural trajectories for a simulated caller. '
+                'Keep changes gradual and evidence-based. '
                 + language_constraint(state.config.language)
             )
         ),
@@ -170,16 +170,16 @@ async def update_caller_profile(state: TrainingState) -> dict:
         ),
     )
 
-    return {"caller_profile": updated}
+    return {'caller_profile': updated}
 
 
 async def decide_phase(state: TrainingState) -> dict:
     """Decide the next conversation phase and whether training should stop."""
     if not state.caller_profile:
-        raise ValueError("Caller profile is not set")
+        raise ValueError('Caller profile is not set')
 
     if not state.scenario:
-        raise ValueError("Scenario is not set")
+        raise ValueError('Scenario is not set')
 
     formatted_history = await format_conversation_history(state)
 
@@ -198,7 +198,7 @@ async def decide_phase(state: TrainingState) -> dict:
     messages = [
         SystemMessage(
             content=(
-                "You control the flow of a counselling conversation. "
+                'You control the flow of a counselling conversation. '
                 + language_constraint(state.config.language)
             )
         ),
@@ -213,6 +213,6 @@ async def decide_phase(state: TrainingState) -> dict:
         finished = True
 
     return {
-        "phase": decision.phase,
-        "finished": finished,
+        'phase': decision.phase,
+        'finished': finished,
     }

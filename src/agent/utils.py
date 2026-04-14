@@ -11,18 +11,18 @@ from agent.state import TrainingState
 
 def parse_handover_command(
     message: HumanMessage,
-) -> Literal["request", "confirm", "cancel"] | None:
+) -> Literal['request', 'confirm', 'cancel'] | None:
     """Parse the handover command from the message."""
-    text = (message.text or "").strip().lower()
-    if not text.startswith("/handover"):
+    text = (message.text or '').strip().lower()
+    if not text.startswith('/handover'):
         return None
 
     parts = text.split()
     if len(parts) == 1:
-        return "request"
+        return 'request'
 
-    action = parts[1].strip(".,!?;:")
-    return action if action in {"confirm", "cancel"} else "request"
+    action = parts[1].strip('.,!?;:')
+    return action if action in {'confirm', 'cancel'} else 'request'
 
 
 async def format_conversation_history(state: TrainingState) -> str:
@@ -34,13 +34,13 @@ async def format_conversation_history(state: TrainingState) -> str:
         (
             i
             for i, msg in enumerate(messages)
-            if isinstance(msg, AIMessage) and getattr(msg, "name", None) == "caller"
+            if isinstance(msg, AIMessage) and getattr(msg, 'name', None) == 'caller'
         ),
         None,
     )
 
     if start_idx is None:
-        return ""
+        return ''
 
     filtered: list[HumanMessage | AIMessage] = []
     for msg in messages[start_idx:]:
@@ -50,25 +50,25 @@ async def format_conversation_history(state: TrainingState) -> str:
             continue
 
         if isinstance(msg, AIMessage):
-            role_name = getattr(msg, "name", None)
-            if role_name == "caller":
+            role_name = getattr(msg, 'name', None)
+            if role_name == 'caller':
                 filtered.append(msg)
-            elif role_name == "trainer":
+            elif role_name == 'trainer':
                 filtered.append(HumanMessage(content=str(msg.content)))
 
     return get_buffer_string(
         filtered,
-        human_prefix="Learner",
-        ai_prefix="Caller",
+        human_prefix='Learner',
+        ai_prefix='Caller',
     )
 
 
 def language_constraint(language: str) -> str:
     """Build the language constraint instruction string."""
     return (
-        "All natural-language output must be in "
+        'All natural-language output must be in '
         f"'{language}'. "
-        "Do not switch to other languages."
+        'Do not switch to other languages.'
     )
 
 
@@ -90,7 +90,7 @@ def get_profile(difficulty: int) -> CallerProfile:
 
     # --- Emotional state (weakly coupled to difficulty)
     emotional_state = random.choices(
-        ["calm", "mild distress", "moderate distress", "severe distress"],
+        ['calm', 'mild distress', 'moderate distress', 'severe distress'],
         weights=[
             max(0.1, 1 - x),  # calm decreases with difficulty
             0.4,

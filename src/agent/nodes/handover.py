@@ -16,77 +16,77 @@ from agent.utils import (
 
 def _utc_now_iso() -> str:
     """Return current UTC timestamp in ISO-8601 format."""
-    return datetime.now(UTC).isoformat(timespec="seconds")
+    return datetime.now(UTC).isoformat(timespec='seconds')
 
 
 async def handover_command(state: TrainingState) -> dict:
     """Handle learner slash commands for trainer handover."""
     last_user_message = state.messages[-1]
-    if last_user_message.type != "human":
-        raise ValueError("Last message is not from the user")
+    if last_user_message.type != 'human':
+        raise ValueError('Last message is not from the user')
 
     action = parse_handover_command(last_user_message)
     if action is None:
-        return {"command_mode": "none"}
+        return {'command_mode': 'none'}
 
-    if action == "request":
+    if action == 'request':
         return {
-            "handover_requested": True,
-            "command_mode": "await_confirmation",
-            "messages": [
+            'handover_requested': True,
+            'command_mode': 'await_confirmation',
+            'messages': [
                 AIMessage(
                     content=(
-                        "Handover requested. Type `/handover confirm` to let the trainer "
-                        "complete the conversation, or `/handover cancel` to continue yourself."
+                        'Handover requested. Type `/handover confirm` to let the trainer '
+                        'complete the conversation, or `/handover cancel` to continue yourself.'
                     )
                 )
             ],
-            "audit_log": [f"{_utc_now_iso()} handover_requested"],
+            'audit_log': [f'{_utc_now_iso()} handover_requested'],
         }
 
-    if action == "cancel":
+    if action == 'cancel':
         return {
-            "handover_requested": False,
-            "handover_active": False,
-            "command_mode": "none",
-            "messages": [
+            'handover_requested': False,
+            'handover_active': False,
+            'command_mode': 'none',
+            'messages': [
                 AIMessage(
-                    content="Handover cancelled. You can continue as the learner."
+                    content='Handover cancelled. You can continue as the learner.'
                 )
             ],
-            "audit_log": [f"{_utc_now_iso()} handover_cancelled"],
+            'audit_log': [f'{_utc_now_iso()} handover_cancelled'],
         }
 
     if not state.handover_requested:
         return {
-            "command_mode": "await_confirmation",
-            "messages": [
+            'command_mode': 'await_confirmation',
+            'messages': [
                 AIMessage(
                     content=(
-                        "No pending handover request found. Start with `/handover trainer` "
-                        "or `/handover` first."
+                        'No pending handover request found. Start with `/handover trainer` '
+                        'or `/handover` first.'
                     )
                 )
             ],
         }
 
     return {
-        "handover_requested": False,
-        "handover_active": True,
-        "command_mode": "trainer_takeover",
-        "messages": [
+        'handover_requested': False,
+        'handover_active': True,
+        'command_mode': 'trainer_takeover',
+        'messages': [
             AIMessage(
-                content="Trainer handover confirmed. I will now continue with the caller."
+                content='Trainer handover confirmed. I will now continue with the caller.'
             )
         ],
-        "audit_log": [f"{_utc_now_iso()} handover_confirmed"],
+        'audit_log': [f'{_utc_now_iso()} handover_confirmed'],
     }
 
 
 async def trainer_takeover(state: TrainingState) -> dict:
     """Generate the trainer's next counsellor message after handover."""
     if not state.scenario:
-        raise ValueError("Scenario is not set")
+        raise ValueError('Scenario is not set')
 
     formatted_history = await format_conversation_history(state)
 
@@ -108,10 +108,10 @@ async def trainer_takeover(state: TrainingState) -> dict:
     ]
 
     response = await llm.ainvoke(messages)
-    trainer_message = response.model_copy(update={"name": "trainer"})
+    trainer_message = response.model_copy(update={'name': 'trainer'})
     return {
-        "messages": [trainer_message],
-        "command_mode": "none",
-        "handover_requested": False,
-        "handover_active": False,
+        'messages': [trainer_message],
+        'command_mode': 'none',
+        'handover_requested': False,
+        'handover_active': False,
     }
