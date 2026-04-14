@@ -109,6 +109,7 @@ Welcome the learner to the coaching session.
 Requirements:
 - Keep the message concise and friendly
 - Explain that `/handover` can be used at any time to let the trainer continue
+- Explain that `/end` can be used at any time to end the current session
 - Mention the category and difficulty of the scenario
 - Mention, how and when you provide feedback
 - End by inviting the learner to begin

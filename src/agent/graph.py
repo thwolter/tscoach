@@ -68,6 +68,7 @@ builder.add_conditional_edges(
     route_after_handover_command,
     {
         'trainer_takeover': 'trainer_takeover',
+        'behaviour_analysis': 'behaviour_analysis',
         'end': END,
     },
 )
@@ -82,6 +83,7 @@ builder.add_conditional_edges(
         'per_turn_feedback': 'per_turn_feedback',
         'end_summary': 'end_summary',
         'caller_simulation': 'caller_simulation',
+        'end': END,
     },
 )
 builder.add_conditional_edges(

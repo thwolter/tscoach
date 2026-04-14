@@ -5,7 +5,7 @@ from typing import Literal
 from langchain_core.messages import AIMessage, HumanMessage
 
 from agent.state import TrainingState
-from agent.utils import parse_handover_command
+from agent.utils import parse_session_command
 
 
 async def entry_router(
@@ -28,7 +28,7 @@ async def entry_router(
     last_message = state.messages[-1]
 
     if isinstance(last_message, HumanMessage):
-        if parse_handover_command(last_message) is not None:
+        if parse_session_command(last_message) is not None:
             return 'handover_command'
         return 'behaviour_analysis'
 
@@ -53,7 +53,7 @@ async def route_after_onboarding(
 
 async def route_after_decide_phase(
     state: TrainingState,
-) -> Literal['per_turn_feedback', 'caller_simulation', 'end_summary']:
+) -> Literal['per_turn_feedback', 'caller_simulation', 'end_summary', 'end']:
     """Route flow after control based on feedback mode and completion state."""
     handover_active = state.handover_active and state.command_mode == 'trainer_takeover'
     if handover_active:
@@ -63,10 +63,13 @@ async def route_after_decide_phase(
 
     mode = state.config.feedback_mode
 
+    if state.finished:
+        if mode in ('final', 'both'):
+            return 'end_summary'
+        return 'end'
+
     if mode in ('per_turn', 'both') and not state.finished:
         return 'per_turn_feedback'
-    if state.finished:
-        return 'end_summary'
     return 'caller_simulation'
 
 
@@ -90,8 +93,10 @@ async def route_after_end_summary(
 
 async def route_after_handover_command(
     state: TrainingState,
-) -> Literal['trainer_takeover', 'end']:
+) -> Literal['trainer_takeover', 'behaviour_analysis', 'end']:
     """Route flow after command handling."""
     if state.command_mode == 'trainer_takeover':
         return 'trainer_takeover'
+    if state.command_mode == 'end_requested':
+        return 'behaviour_analysis'
     return 'end'

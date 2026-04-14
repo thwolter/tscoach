@@ -175,6 +175,9 @@ async def update_caller_profile(state: TrainingState) -> dict:
 
 async def decide_phase(state: TrainingState) -> dict:
     """Decide the next conversation phase and whether training should stop."""
+    if state.finished:
+        return {'finished': True}
+
     if not state.caller_profile:
         raise ValueError('Caller profile is not set')
 

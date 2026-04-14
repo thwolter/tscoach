@@ -23,11 +23,12 @@ The graph is defined in `src/agent/graph.py`.
 
 ### Trainer Handover Command
 
-The learner can hand over the live call to the trainer:
+The learner can hand over the live call to the trainer or end the current session:
 
 - Send `/handover trainer` (or `/handover`) to request handover.
 - Send `/handover confirm` to activate trainer takeover.
 - Send `/handover cancel` to abort the request.
+- Send `/end` to terminate the current session immediately.
 
 After confirmation, the trainer continues the counsellor side of the conversation and the caller keeps responding until the conversation ends.
 

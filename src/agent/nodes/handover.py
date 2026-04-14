@@ -10,7 +10,7 @@ from agent.state import TrainingState
 from agent.utils import (
     format_conversation_history,
     language_constraint,
-    parse_handover_command,
+    parse_session_command,
 )
 
 
@@ -20,14 +20,28 @@ def _utc_now_iso() -> str:
 
 
 async def handover_command(state: TrainingState) -> dict:
-    """Handle learner slash commands for trainer handover."""
+    """Handle learner slash commands for trainer handover/session termination."""
     last_user_message = state.messages[-1]
     if last_user_message.type != 'human':
         raise ValueError('Last message is not from the user')
 
-    action = parse_handover_command(last_user_message)
+    action = parse_session_command(last_user_message)
     if action is None:
         return {'command_mode': 'none'}
+
+    if action == 'end':
+        return {
+            'handover_requested': False,
+            'handover_active': False,
+            'command_mode': 'end_requested',
+            'finished': True,
+            'messages': [
+                AIMessage(
+                    content='Session ended. You can start a new training anytime.'
+                )
+            ],
+            'audit_log': [f'{_utc_now_iso()} session_ended'],
+        }
 
     if action == 'request':
         return {

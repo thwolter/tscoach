@@ -9,11 +9,14 @@ from agent.schemas import CallerProfile
 from agent.state import TrainingState
 
 
-def parse_handover_command(
+def parse_session_command(
     message: HumanMessage,
-) -> Literal['request', 'confirm', 'cancel'] | None:
-    """Parse the handover command from the message."""
+) -> Literal['request', 'confirm', 'cancel', 'end'] | None:
+    """Parse handover/session termination slash commands from the message."""
     text = (message.text or '').strip().lower()
+    if text == '/end':
+        return 'end'
+
     if not text.startswith('/handover'):
         return None
 
@@ -45,7 +48,7 @@ async def format_conversation_history(state: TrainingState) -> str:
     filtered: list[HumanMessage | AIMessage] = []
     for msg in messages[start_idx:]:
         if isinstance(msg, HumanMessage):
-            if parse_handover_command(msg) is None:
+            if parse_session_command(msg) is None:
                 filtered.append(msg)
             continue
 

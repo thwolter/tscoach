@@ -35,7 +35,9 @@ class TrainingState(BaseModel):
 
     handover_requested: bool = False
     handover_active: bool = False
-    command_mode: Literal['none', 'await_confirmation', 'trainer_takeover'] = 'none'
+    command_mode: Literal[
+        'none', 'await_confirmation', 'trainer_takeover', 'end_requested'
+    ] = 'none'
     audit_log: Annotated[list[str], add] = Field(default_factory=list)
 
     per_turn_feedback: Annotated[list[str], add] = Field(default_factory=list)

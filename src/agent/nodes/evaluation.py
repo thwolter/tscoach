@@ -13,7 +13,11 @@ from agent.prompts.evaluation import (
 )
 from agent.schemas import Aggregates, TurnEvaluation
 from agent.state import TrainingState
-from agent.utils import format_conversation_history, language_constraint
+from agent.utils import (
+    format_conversation_history,
+    language_constraint,
+    parse_session_command,
+)
 
 
 async def aggregate_evaluation(
@@ -58,9 +62,17 @@ async def aggregate_evaluation(
 
 async def behaviour_analysis(state: TrainingState) -> dict:
     """Evaluate the latest learner reply and refresh aggregate metrics."""
-    last_user_message = state.messages[-1]
-    if last_user_message.type != 'human':
-        raise ValueError('Last message is not from the user')
+    last_user_message = next(
+        (
+            message
+            for message in reversed(state.messages)
+            if isinstance(message, HumanMessage)
+            and parse_session_command(message) is None
+        ),
+        None,
+    )
+    if last_user_message is None:
+        raise ValueError('No analysable learner message found')
 
     formatted_history = await format_conversation_history(state)
 
