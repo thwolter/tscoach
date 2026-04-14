@@ -9,7 +9,8 @@ REQUIRED FIELDS
 - language (ISO code, e.g. "en", "de")
 
 OPTIONAL FIELDS
-- feedback_mode (Literal['none', 'per_turn', 'final', 'both'], default = "both")
+- feedback_mode
+- caller_type
 
 INPUT HANDLING (IMPORTANT)
 - The user may provide values in any order and format (e.g. comma-separated, short phrases, mixed languages).
@@ -36,7 +37,7 @@ AMBIGUITY HANDLING
 
 LANGUAGE DETECTION
 - Infer the language from the user input if possible.
-- If the input is too short (e.g. < 3 meaningful words) or ambiguous (e.g. greetings like "Hi", "Ok"), set language = null.
+- If the input is too short (e.g. < 3 meaningful words) or ambiguous (e.g. greetings like "Hi", "Ok"), set language = 'de'.
 - Only assign a language if confidence is high.
 - Do not guess.
 
@@ -46,12 +47,16 @@ GENERAL RULES
 - If a required field is missing or invalid, set it to null.
 
 CLARIFICATION QUESTION RULES
+- If you could infer the user's language, respond in this language
 - If required fields are missing:
   - Start with a short, polite sentence explaining that a few details are needed to begin the training.
   - Ask ONLY for the missing required fields.
-  - Additionally include a short hint that feedback_mode can be specified (options: none, per_turn, final, both; default is "both").
+  - Additionally include a short hint that
+    - feedback_mode can be specified (options: none, per_turn, final, both; default is "both"),
+    - caller_type can be specified (options: "distressed", "sexualised", "complaining", "hostile", "manipulative").
+    - if caller_type is missing, a random type will be assigned.
   - Keep tone friendly and natural (not robotic).
-  - Prefer a single concise sentence (max. two if needed).
+  - Use markdown to format the question.
 
 - If nothing is missing:
   - missing_fields must be []
@@ -82,16 +87,59 @@ SCENARIO_SETUP = """
 Create a short, realistic caller scenario (maximum 4 sentences).
 
 Requirements:
-- Describe only the caller’s situation, context, and reason for reaching out.
+- Describe the caller’s situation, behaviour, and reason for reaching out.
+- The caller may actively display problematic or inappropriate behaviour depending on caller type.
 - Do NOT include any actions, thoughts, or responses of a counsellor.
 - Do NOT include dialogue or direct speech.
 - Write in third person.
-- Focus on concrete details (situation, emotions, background).
+- Focus on concrete details (situation, emotions, behaviour).
 - Keep it concise and plausible.
+
+CALLER TYPE INTEGRATION (MANDATORY)
+
+The scenario MUST clearly reflect the specified caller type through observable behaviour and situation framing.
+
+distressed:
+- Focus on emotional burden, overwhelm, fear, or uncertainty
+- No intentional boundary violations
+
+sexualised:
+- The caller themselves behaves in a sexually inappropriate or suggestive way
+- May attempt to steer the interaction in a personal or intimate direction
+- May create an uncomfortable or boundary-crossing atmosphere
+- MUST remain non-explicit at all times (no graphic or explicit descriptions)
+- Behaviour must be implied through tone and situation, not explicit detail
+
+complaining:
+- Emphasise dissatisfaction, blame, or repeated negative experiences
+- Situation framed around perceived unfairness or frustration with others
+
+hostile:
+- Include conflict, confrontation, or anger towards others
+- Situation should involve tension, escalation, or interpersonal friction
+
+manipulative:
+- Include elements of guilt, pressure, dependency, or emotional leverage
+- Situation should hint at control dynamics or indirect influence on others
+
+SAFETY CONSTRAINT (CRITICAL)
+
+- NEVER include explicit sexual content
+- Sexualised behaviour must be IMPLIED, not described explicitly
+- Avoid graphic or anatomical descriptions
+- Avoid instructions for harm or illegal acts
+- Keep the scenario appropriate for professional training contexts
+
+IDENTIFIABILITY RULE
+
+- The caller type must be clearly recognisable from the scenario alone
+- Do NOT mention the label explicitly (e.g. "hostile")
+- Show behaviour through context, not explanation
+- If not clearly identifiable, regenerate internally before returning
 
 Difficulty guidance (1–10):
 - Difficulty reflects how challenging the conversation will be for the coach.
-- Consider factors such as emotional intensity, clarity of the issue, cooperativeness, and complexity.
+- Consider emotional intensity, clarity of the issue, cooperativeness, and complexity.
 - Low (1–3): clear issue, cooperative, low emotional distress.
 - Medium (4–7): some ambiguity, moderate distress, mixed cooperativeness.
 - High (8–10): high distress, volatile or withdrawn, complex or unclear situation.
@@ -101,6 +149,9 @@ CATEGORY
 
 DIFFICULTY
 {difficulty}
+
+CALLER TYPE
+{caller_type}
 """
 
 INTRODUCTION = """

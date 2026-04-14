@@ -1,5 +1,6 @@
 """Onboarding nodes."""
 
+import random
 from typing import cast
 
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
@@ -7,13 +8,20 @@ from langchain_core.output_parsers import StrOutputParser
 
 from agent.llm import llm
 from agent.prompts.onboarding import INTRODUCTION, PARSE_ONBOARDING, SCENARIO_SETUP
-from agent.schemas import OnboardingSetup, Scenario, TrainingConfig
+from agent.schemas import CallerType, OnboardingSetup, Scenario, TrainingConfig
 from agent.state import TrainingState
 from agent.utils import get_profile, language_constraint
 
 DEFAULT_LANGUAGE = 'en'
 DEFAULT_MAX_TURNS = None
 DEFAULT_FEEDBACK_MODE = 'both'
+CALLER_TYPES: tuple[CallerType, ...] = (
+    'distressed',
+    'sexualised',
+    'complaining',
+    'hostile',
+    'manipulative',
+)
 
 
 async def onboarding(state: TrainingState) -> dict:
@@ -33,7 +41,12 @@ async def onboarding(state: TrainingState) -> dict:
             'messages': [AIMessage(content=setup.clarification_question)],
         }
 
-    scenario = Scenario(category=setup.category, difficulty=setup.difficulty)
+    caller_type: CallerType = setup.caller_type or random.choice(CALLER_TYPES)
+    scenario = Scenario(
+        category=setup.category,
+        difficulty=setup.difficulty,
+        caller_type=setup.caller_type or caller_type,
+    )
     config = TrainingConfig(
         language=setup.language or DEFAULT_LANGUAGE,
         max_turns=setup.max_turns or DEFAULT_MAX_TURNS,
@@ -49,11 +62,16 @@ async def scenario_setup(state: TrainingState) -> dict:
 
     category = state.scenario.category
     difficulty = state.scenario.difficulty
+    caller_type = state.scenario.caller_type
 
     if not difficulty:
         raise ValueError('Scenario difficulty is not set')
 
-    create_scenario = SCENARIO_SETUP.format(category=category, difficulty=difficulty)
+    create_scenario = SCENARIO_SETUP.format(
+        category=category,
+        difficulty=difficulty,
+        caller_type=caller_type,
+    )
 
     messages = [
         SystemMessage(
@@ -68,9 +86,7 @@ async def scenario_setup(state: TrainingState) -> dict:
     chain = llm | StrOutputParser()
     scenario_description = await chain.ainvoke(messages)
 
-    scenario = Scenario(
-        category=category, difficulty=difficulty, description=scenario_description
-    )
+    scenario = state.scenario.model_copy(update={'description': scenario_description})
     profile = get_profile(difficulty)
 
     return {

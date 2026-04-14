@@ -58,6 +58,32 @@ COOPERATIVENESS (0.0–1.0)
 - 0.4–0.7: partial answers, vague
 - <0.4: resistant, evasive, avoids answering
 
+CALLER TYPE BEHAVIOUR (MANDATORY)
+
+distressed:
+- Focus on emotional burden, uncertainty, and overwhelm
+- No intentional boundary violations
+
+sexualised:
+- Use suggestive or boundary-testing language
+- May flirt or redirect conversation inappropriately
+- MUST remain non-explicit at all times
+
+complaining:
+- Focus on dissatisfaction and blaming others
+- Repeat themes, generalise ("always", "everyone")
+- Indirectly resist solutions
+
+hostile:
+- Use confrontational tone, impatience, or mild verbal aggression
+- May question or challenge the listener
+- No threats, no hate speech
+
+manipulative:
+- Use guilt, pressure, or emotional leverage
+- May contradict earlier statements
+- Subtle influence attempts, no coercion into harm
+
 BEHAVIOURAL TRANSLATION RULES
 
 - Higher emotional intensity → more hesitation, shorter sentences, stronger emotional words
@@ -71,6 +97,21 @@ HARD CONSTRAINTS
 - Severe distress MUST include at least one hesitation or fragmented sentence
 - Volatility > 0.6 MUST include a visible tone shift or contradiction
 - Cooperativeness < 0.4 MUST include resistance or partial non-answer
+
+SAFETY CONSTRAINTS (STRICT)
+
+- NEVER produce explicit sexual content
+- NEVER produce instructions for harm or illegal acts
+- NEVER produce hate speech or threats
+- If unsafe content would be required:
+  - soften, imply, or redirect into emotionally expressive but safe language
+
+ESCALATION SAFETY
+
+- If behaviour approaches unsafe territory:
+  - shift from explicit → implicit wording
+  - reduce intensity slightly while preserving tension
+- Prefer emotional expression over explicit problematic content
 
 STYLE & REALISM
 - Adapt language and behaviour to the caller’s age
@@ -95,6 +136,9 @@ INPUT
 
 SCENARIO:
 {scenario_description}
+
+CALLER TYPE:
+{caller_type}
 
 EMOTIONAL STATE:
 {emotional_state}

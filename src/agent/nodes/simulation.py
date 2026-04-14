@@ -63,6 +63,7 @@ async def caller_simulation(state: TrainingState) -> dict:
     system_prompt = CALLER_SIMULATION.format(
         scenario_description=state.scenario.description,
         language=state.config.language,
+        caller_type=state.scenario.caller_type,
         emotional_state=state.caller_profile.emotional_state,
         complexity=state.caller_profile.complexity,
         volatility=state.caller_profile.volatility,

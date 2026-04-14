@@ -4,6 +4,14 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+CallerType = Literal[
+    'distressed',
+    'sexualised',
+    'complaining',
+    'hostile',
+    'manipulative',
+]
+
 
 class OnboardingSetup(BaseModel):
     """Setup for the onboarding process."""
@@ -25,6 +33,10 @@ class OnboardingSetup(BaseModel):
         description='Maximum number of turns in the conversation; only if explicitly stated',
         ge=1,
     )
+    caller_type: CallerType | None = Field(
+        None,
+        description='Behavioural archetype of the caller influencing tone and interaction style.',
+    )
 
     missing_fields: list[str] = Field(
         description='List of required fields that are missing or invalid'
@@ -40,6 +52,7 @@ class Scenario(BaseModel):
     category: str | None = None
     difficulty: int | None = Field(None, ge=1, le=10)
     description: str | None = None
+    caller_type: CallerType | None = None
 
 
 class CallerProfile(BaseModel):
