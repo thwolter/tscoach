@@ -72,7 +72,7 @@ builder.add_conditional_edges(
         'end': END,
     },
 )
-builder.add_edge('trainer_takeover', 'update_caller_profile')
+builder.add_edge('trainer_takeover', 'behaviour_analysis')
 builder.add_edge('caller_simulation', END)
 builder.add_edge('behaviour_analysis', 'update_caller_profile')
 builder.add_edge('update_caller_profile', 'decide_phase')

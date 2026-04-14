@@ -5,26 +5,33 @@ from typing import cast
 from langchain_core.messages import HumanMessage, SystemMessage
 
 from agent.llm import llm
-from agent.prompts.simulation import CALLER_SIMULATION, PHASE_DECISION, PROFILE_UPDATE
+from agent.prompts.simulation import (
+    CALLER_SIMULATION,
+    PHASE_DECISION,
+    PROFILE_UPDATE_INPUT,
+    PROFILE_UPDATE_SYSTEM,
+)
 from agent.schemas import CallerProfile, CallerProfileUpdate, PhaseDecision
 from agent.state import TrainingState
-from agent.utils import format_conversation_history, language_constraint
+from agent.utils import (
+    bounded_step,
+    clamp,
+    format_conversation_history,
+    trim_recent_lines,
+)
 
 _EMOTIONAL_LEVELS = ['calm', 'mild distress', 'moderate distress', 'severe distress']
+_PROFILE_HISTORY_MAX_LINES = 16
 
 
-def _bounded_step(current: float, target: float, max_delta: float) -> float:
-    """Move from current toward target by at most max_delta."""
-    if target > current:
-        return min(target, current + max_delta)
-    return max(target, current - max_delta)
+def _bounded_complexity(current: int, target: int) -> int:
+    """Step complexity gradually and keep it in the valid range."""
+    return clamp(bounded_step(current, target, 1), 1, 5)
 
 
-def _bounded_int_step(current: int, target: int, max_delta: int) -> int:
-    """Move from current toward target by at most max_delta."""
-    if target > current:
-        return min(target, current + max_delta)
-    return max(target, current - max_delta)
+def _bounded_trait(current: float, target: float) -> float:
+    """Step trait score gradually, clamp to [0, 1], and round for storage."""
+    return round(clamp(bounded_step(current, target, 0.10), 0.0, 1.0), 2)
 
 
 def _bounded_emotional_state(current: str, target: str) -> str:
@@ -63,9 +70,7 @@ async def caller_simulation(state: TrainingState) -> dict:
     )
 
     messages = [
-        SystemMessage(
-            content=(system_prompt + language_constraint(state.config.language))
-        ),
+        SystemMessage(content=system_prompt),
         HumanMessage(content=formatted_history),
     ]
 
@@ -83,10 +88,13 @@ async def update_caller_profile(state: TrainingState) -> dict:
     if not state.caller_profile:
         raise ValueError('Caller profile is not set')
 
-    formatted_history = await format_conversation_history(state)
+    formatted_history = trim_recent_lines(
+        await format_conversation_history(state),
+        _PROFILE_HISTORY_MAX_LINES,
+    )
     latest_evaluation = state.evaluations[-1] if state.evaluations else None
 
-    update_msg = PROFILE_UPDATE.format(
+    update_msg = PROFILE_UPDATE_INPUT.format(
         emotional_state=state.caller_profile.emotional_state,
         complexity=state.caller_profile.complexity,
         volatility=state.caller_profile.volatility,
@@ -111,11 +119,7 @@ async def update_caller_profile(state: TrainingState) -> dict:
 
     messages = [
         SystemMessage(
-            content=(
-                'You update behavioural trajectories for a simulated caller. '
-                'Keep changes gradual and evidence-based. '
-                + language_constraint(state.config.language)
-            )
+            content=PROFILE_UPDATE_SYSTEM.format(language=state.config.language)
         ),
         HumanMessage(content=update_msg),
     ]
@@ -129,44 +133,10 @@ async def update_caller_profile(state: TrainingState) -> dict:
             current=current.emotional_state,
             target=proposed.emotional_state,
         ),
-        complexity=max(
-            1,
-            min(
-                5,
-                _bounded_int_step(
-                    current=current.complexity,
-                    target=proposed.complexity,
-                    max_delta=1,
-                ),
-            ),
-        ),
-        volatility=round(
-            max(
-                0.0,
-                min(
-                    1.0,
-                    _bounded_step(
-                        current=current.volatility,
-                        target=proposed.volatility,
-                        max_delta=0.10,
-                    ),
-                ),
-            ),
-            2,
-        ),
-        cooperativeness=round(
-            max(
-                0.0,
-                min(
-                    1.0,
-                    _bounded_step(
-                        current=current.cooperativeness,
-                        target=proposed.cooperativeness,
-                        max_delta=0.10,
-                    ),
-                ),
-            ),
-            2,
+        complexity=_bounded_complexity(current.complexity, proposed.complexity),
+        volatility=_bounded_trait(current.volatility, proposed.volatility),
+        cooperativeness=_bounded_trait(
+            current.cooperativeness, proposed.cooperativeness
         ),
     )
 
@@ -188,12 +158,13 @@ async def decide_phase(state: TrainingState) -> dict:
 
     system_prompt = PHASE_DECISION.format(
         scenario_description=state.scenario.description,
+        language=state.config.language,
         emotional_state=state.caller_profile.emotional_state,
         volatility=state.caller_profile.volatility,
         cooperativeness=state.caller_profile.cooperativeness,
         phase=state.phase,
         turn_index=state.turn_index,
-    ) + language_constraint(state.config.language)
+    )
 
     messages = [
         SystemMessage(content=system_prompt),

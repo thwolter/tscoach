@@ -82,7 +82,7 @@ CONVERSATION DYNAMICS
 - Allow pauses, uncertainty, emotional leakage
 
 LANGUAGE
-- Output MUST be in the specified language
+- Output MUST be in '{language}'
 - Keep wording age-appropriate and realistic
 
 DO NOT
@@ -95,9 +95,6 @@ INPUT
 
 SCENARIO:
 {scenario_description}
-
-LANGUAGE:
-{language}
 
 EMOTIONAL STATE:
 {emotional_state}
@@ -173,15 +170,38 @@ c) BLOCKING CONDITIONS (do NOT end)
 OUTPUT REQUIREMENTS:
 - Keep rationale concise (1–2 sentences)
 - Base decision on BOTH emotional trajectory AND interaction signals
+- Rationale MUST be in '{language}'
 """
 
 
-PROFILE_UPDATE = """
+PROFILE_UPDATE_SYSTEM = """
 You update the caller profile after the latest learner response.
 
-Use the conversation trajectory and latest evaluation to adjust the profile realistically.
-Make gradual changes only.
+Use the latest turn evaluation as the primary causal input and the conversation trajectory as secondary context.
+Keep updates gradual, evidence-based, and realistic.
 
+RULES:
+- Keep transitions gradual and plausible
+- Prefer no change when evidence is weak
+- Do NOT mirror the caller’s last message
+- Interpret the latest turn evaluation as the effect of the learner’s intervention
+- Estimate how the learner’s behaviour influences the caller’s state (stabilising vs destabilising)
+- Apply small directional changes (Δ) to the profile variables based on this effect
+- Even under high distress, allow slight improvements if the intervention is supportive
+- Avoid increasing distress or volatility unless there is clear evidence of escalation caused by the learner
+- Output MUST be in '{language}'
+
+INTERNAL (DO NOT OUTPUT):
+1) Assess intervention quality (e.g. empathy, guidance, pressure)
+2) Derive directional change per variable (↑ ↓ →)
+3) Apply bounded, gradual update
+
+OUTPUT:
+Return the updated profile in the required structured format.
+"""
+
+
+PROFILE_UPDATE_INPUT = """
 CURRENT PROFILE:
 - emotional_state: {emotional_state}
 - complexity: {complexity}
@@ -199,15 +219,4 @@ TURN:
 
 CONVERSATION:
 {formatted_history}
-
-RULES:
-- emotional_state may only move by one level from the current level
-- complexity may change by at most 1
-- volatility may change by at most 0.10
-- cooperativeness may change by at most 0.10
-- Keep values inside valid bounds
-- Prefer no change when evidence is weak
-
-OUTPUT:
-Return the updated profile in the required structured format.
 """
