@@ -11,7 +11,7 @@ from agent.state import TrainingState
 
 def parse_session_command(
     message: HumanMessage,
-) -> Literal['request', 'confirm', 'cancel', 'end'] | None:
+) -> Literal['request', 'end'] | None:
     """Parse handover/session termination slash commands from the message."""
     text = (message.text or '').strip().lower()
     if text == '/end':
@@ -20,12 +20,7 @@ def parse_session_command(
     if not text.startswith('/handover'):
         return None
 
-    parts = text.split()
-    if len(parts) == 1:
-        return 'request'
-
-    action = parts[1].strip('.,!?;:')
-    return action if action in {'confirm', 'cancel'} else 'request'
+    return 'request'
 
 
 async def format_conversation_history(state: TrainingState) -> str:
