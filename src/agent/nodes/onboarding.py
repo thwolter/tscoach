@@ -6,7 +6,7 @@ from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_core.output_parsers import StrOutputParser
 
 from agent.llm import llm
-from agent.prompts.onboarding import PARSE_ONBOARDING, SCENARIO_SETUP
+from agent.prompts.onboarding import INTRODUCTION, PARSE_ONBOARDING, SCENARIO_SETUP
 from agent.schemas import OnboardingSetup, Scenario, TrainingConfig
 from agent.state import TrainingState
 from agent.utils import get_profile, language_constraint
@@ -81,13 +81,22 @@ async def scenario_setup(state: TrainingState) -> dict:
 
 async def introduction(state: TrainingState) -> dict:
     """Introduce the agent to the user."""
+    if not state.scenario:
+        raise ValueError('Scenario is not set')
+
     system_prompt = 'You are a helpful assistant.' + language_constraint(
         state.config.language
     )
+    introduction_prompt = INTRODUCTION.format(
+        category=state.scenario.category,
+        difficulty=state.scenario.difficulty,
+        feedback_mode=state.config.feedback_mode,
+    )
     messages = [
         SystemMessage(content=system_prompt),
-        HumanMessage(content='How can I help you today?'),
+        HumanMessage(content=introduction_prompt),
     ]
+    response = await llm.ainvoke(messages)
     return {
-        'messages': [await llm.ainvoke(messages)],
+        'messages': [response],
     }

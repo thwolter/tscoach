@@ -1,29 +1,46 @@
 """Prompts for onboarding and scenario setup."""
 
 PARSE_ONBOARDING = """
-Extract structured scenario setup from the user input.
+EExtract structured scenario setup from the user input.
 
 REQUIRED FIELDS
 - category
-- difficulty
+- difficulty (integer 1–10)
+- language
 
 OPTIONAL FIELDS
-- language
 - feedback_mode
 
-RULES
-- Do NOT infer or guess values apart from the language
-- Infer language from the user input if not stated explicitly
-- Only extract explicitly stated information
-- If required fields are missing or invalid, set them to null
+LANGUAGE DETECTION
+- Infer the language from the user input if possible.
+- If the input is too short (e.g. < 3 meaningful words) or ambiguous (e.g. greetings like "Hi", "Ok"), set language = null.
+- Only assign a language if confidence is high.
+- Do not guess.
 
-OUTPUT
-Return all fields.
+GENERAL RULES
+- Only extract explicitly stated information (except for language, which may be inferred).
+- Do NOT infer or assume category or difficulty.
+- If a required field is missing or invalid, set it to null.
 
-- missing_fields must contain missing or invalid required fields
-- clarification_question must ask ONLY for missing required fields
-- If nothing is missing, missing_fields must be empty and clarification_question null
-- If you cannot identify the language, set it as missing_fields
+CLARIFICATION QUESTION RULES
+- If required fields are missing:
+  - Start with a short, polite sentence explaining that a few details are needed to begin the training.
+  - Ask ONLY for the missing required fields.
+  - Additionally include a short hint that feedback_mode can be specified (options: none, per_turn, final, both; default is "both").
+  - Keep tone friendly and natural (not robotic).
+  - Prefer a single concise sentence (max. two if needed).
+
+- If nothing is missing:
+  - missing_fields must be []
+  - clarification_question must be null
+
+EXAMPLE
+
+Input: "Hi"
+→ language = null
+
+Clarification:
+"To get started, I just need a few details: please specify the category, difficulty (1–10), and language. Optionally, you can also set the feedback mode (none, per_turn, final, both; default is 'both')."
 """
 
 
@@ -50,4 +67,24 @@ CATEGORY
 
 DIFFICULTY
 {difficulty}
+"""
+
+INTRODUCTION = """
+Welcome the learner to the coaching session.
+
+Requirements:
+- Keep the message concise and friendly
+- Explain that `/handover` can be used at any time to let the trainer continue
+- Mention the category and difficulty of the scenario
+- Mention, how and when you provide feedback
+- End by inviting the learner to begin
+
+CATEGORY
+{category}
+
+DIFFICULTY
+{difficulty}
+
+FEEDBACK MODE
+{feedback_mode}
 """

@@ -23,6 +23,7 @@ from agent.nodes import (
     trainer_takeover,
     update_caller_profile,
 )
+from agent.nodes.onboarding import introduction
 from agent.state import TrainingState
 
 builder = StateGraph(TrainingState)
@@ -38,6 +39,7 @@ builder.add_node('decide_phase', decide_phase)
 builder.add_node('per_turn_feedback', per_turn_feedback)
 builder.add_node('end_summary', end_summary)
 builder.add_node('final_feedback', final_feedback)
+builder.add_node('introduction', introduction)
 
 
 builder.add_conditional_edges(
@@ -59,7 +61,8 @@ builder.add_conditional_edges(
         'end': END,
     },
 )
-builder.add_edge('scenario_setup', 'caller_simulation')
+builder.add_edge('scenario_setup', 'introduction')
+builder.add_edge('introduction', 'caller_simulation')
 builder.add_conditional_edges(
     'handover_command',
     route_after_handover_command,

@@ -31,7 +31,7 @@ class OnboardingSetup(BaseModel):
         description='List of required fields that are missing or invalid'
     )
     clarification_question: str | None = Field(
-        description='Short question asking for missing required fields'
+        description='Short intro and question asking for missing required fields'
     )
 
 
