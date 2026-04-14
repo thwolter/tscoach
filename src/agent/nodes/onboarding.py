@@ -12,7 +12,7 @@ from agent.state import TrainingState
 from agent.utils import get_profile, language_constraint
 
 DEFAULT_LANGUAGE = 'en'
-DEFAULT_MAX_TURNS = 10
+DEFAULT_MAX_TURNS = None
 DEFAULT_FEEDBACK_MODE = 'both'
 
 
