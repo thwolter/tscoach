@@ -5,7 +5,7 @@ from typing import cast
 from langchain_core.messages import HumanMessage, SystemMessage
 
 from agent.llm import llm
-from agent.prompts import CALLER_SIMULATION, PHASE_DECISION, PROFILE_UPDATE
+from agent.prompts.simulation import CALLER_SIMULATION, PHASE_DECISION, PROFILE_UPDATE
 from agent.schemas import CallerProfile, CallerProfileUpdate, PhaseDecision
 from agent.state import TrainingState
 from agent.utils import format_conversation_history, language_constraint

@@ -5,7 +5,7 @@ from typing import cast
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 
 from agent.llm import llm
-from agent.prompts import (
+from agent.prompts.evaluation import (
     EVALUATION_SUMMARY,
     LEARNER_EVALUATION,
     TRAINING_WRAP_UP,

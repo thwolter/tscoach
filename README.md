@@ -175,7 +175,7 @@ src/agent/
     onboarding.py       # Setup extraction + scenario creation
     simulation.py       # Caller simulation + phase decisions
     evaluation.py       # Turn evaluation + feedback
-  prompts.py            # Prompt templates
+  prompts/             # Prompt templates clustered by topic
   llm.py                # Model initialization
 ```
 

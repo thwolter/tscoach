@@ -5,7 +5,7 @@ from datetime import UTC, datetime
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 
 from agent.llm import llm
-from agent.prompts import TRAINER_TAKEOVER
+from agent.prompts.handover import TRAINER_TAKEOVER
 from agent.state import TrainingState
 from agent.utils import (
     format_conversation_history,
