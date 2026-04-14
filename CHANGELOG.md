@@ -1,3 +1,22 @@
+## 0.5.0 (2026-04-14)
+
+### BREAKING CHANGE
+
+- Changes in command parsing and session routing require updates in downstream workflows and state handling logic.
+- Changes in schema and logic require updates in downstream integrations for evaluation, onboarding, and simulation workflows.
+
+### Feat
+
+- **simulation**: refine greeting logic for improved conversation flow
+- **session**: add `/end` command for session termination
+- **evaluation**: enhance prompts with feedback integration and adaptive coaching
+- **onboarding**: enhance scenario setup and add introduction node
+
+### Refactor
+
+- **prompts**: restructure prompt templates into topic-specific modules
+- update string literals to use single quotes for consistency
+
 ## 0.4.0 (2026-04-14)
 
 ### BREAKING CHANGE
