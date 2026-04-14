@@ -47,14 +47,21 @@ services:
           dockerfile: Dockerfile
         image: "langgraph-app"
         entrypoint: ["python", "-m", "uvicorn", "langgraph_secure_gateway.entrypoints:app", "--host", "0.0.0.0", "--port", "8000"]
-        expose:
-            - "8000"
+        healthcheck:
+            test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/healthz', timeout=3).read()"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+            start_period: 10s
+        ports:
+            - "${AUTH_GATEWAY_HOST_PORT:-8123}:8000"
         depends_on:
             langgraph-api:
                 condition: service_started
             langgraph-postgres:
                 condition: service_healthy
         environment:
+            REDIS_URI: redis://langgraph-redis:6379
             POSTGRES_URI: postgres://postgres:postgres@langgraph-postgres:5432/postgres?sslmode=disable
             JWT_SECRET: ${JWT_SECRET}
             JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}

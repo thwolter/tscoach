@@ -62,6 +62,8 @@ Add authentication settings:
 ```env
 JWT_SECRET=your-long-random-secret
 ADMIN_SESSION_SECRET=your-admin-session-secret
+AUTH_DB_AUTO_INIT=true
+AUTH_GATEWAY_HOST_PORT=8123
 ```
 
 Optional for tracing:
@@ -127,6 +129,8 @@ To disable access, set `is_active=false` for the target user.
    - `ADMIN_SESSION_SECRET`
    - `JWT_ALGORITHM`
    - `JWT_EXPIRE_MINUTES`
+   - `AUTH_DB_AUTO_INIT`
+   - `AUTH_GATEWAY_HOST_PORT`
 2. Start the stack:
 
 ```bash
