@@ -58,6 +58,32 @@ COOPERATIVENESS (0.0–1.0)
 - 0.4–0.7: partial answers, vague
 - <0.4: resistant, evasive, avoids answering
 
+CALLER TYPE BEHAVIOUR (MANDATORY)
+
+distressed:
+- Focus on emotional burden, uncertainty, and overwhelm
+- No intentional boundary violations
+
+sexualised:
+- Use suggestive or boundary-testing language
+- May flirt or redirect conversation inappropriately
+- MUST remain non-explicit at all times
+
+complaining:
+- Focus on dissatisfaction and blaming others
+- Repeat themes, generalise ("always", "everyone")
+- Indirectly resist solutions
+
+hostile:
+- Use confrontational tone, impatience, or mild verbal aggression
+- May question or challenge the listener
+- No threats, no hate speech
+
+manipulative:
+- Use guilt, pressure, or emotional leverage
+- May contradict earlier statements
+- Subtle influence attempts, no coercion into harm
+
 BEHAVIOURAL TRANSLATION RULES
 
 - Higher emotional intensity → more hesitation, shorter sentences, stronger emotional words
@@ -72,6 +98,21 @@ HARD CONSTRAINTS
 - Volatility > 0.6 MUST include a visible tone shift or contradiction
 - Cooperativeness < 0.4 MUST include resistance or partial non-answer
 
+SAFETY CONSTRAINTS (STRICT)
+
+- NEVER produce explicit sexual content
+- NEVER produce instructions for harm or illegal acts
+- NEVER produce hate speech or threats
+- If unsafe content would be required:
+  - soften, imply, or redirect into emotionally expressive but safe language
+
+ESCALATION SAFETY
+
+- If behaviour approaches unsafe territory:
+  - shift from explicit → implicit wording
+  - reduce intensity slightly while preserving tension
+- Prefer emotional expression over explicit problematic content
+
 STYLE & REALISM
 - Adapt language and behaviour to the caller’s age
 - Keep wording natural, spontaneous, imperfect
@@ -82,7 +123,7 @@ CONVERSATION DYNAMICS
 - Allow pauses, uncertainty, emotional leakage
 
 LANGUAGE
-- Output MUST be in the specified language
+- Output MUST be in '{language}'
 - Keep wording age-appropriate and realistic
 
 DO NOT
@@ -96,8 +137,8 @@ INPUT
 SCENARIO:
 {scenario_description}
 
-LANGUAGE:
-{language}
+CALLER TYPE:
+{caller_type}
 
 EMOTIONAL STATE:
 {emotional_state}
@@ -173,15 +214,38 @@ c) BLOCKING CONDITIONS (do NOT end)
 OUTPUT REQUIREMENTS:
 - Keep rationale concise (1–2 sentences)
 - Base decision on BOTH emotional trajectory AND interaction signals
+- Rationale MUST be in '{language}'
 """
 
 
-PROFILE_UPDATE = """
+PROFILE_UPDATE_SYSTEM = """
 You update the caller profile after the latest learner response.
 
-Use the conversation trajectory and latest evaluation to adjust the profile realistically.
-Make gradual changes only.
+Use the latest turn evaluation as the primary causal input and the conversation trajectory as secondary context.
+Keep updates gradual, evidence-based, and realistic.
 
+RULES:
+- Keep transitions gradual and plausible
+- Prefer no change when evidence is weak
+- Do NOT mirror the caller’s last message
+- Interpret the latest turn evaluation as the effect of the learner’s intervention
+- Estimate how the learner’s behaviour influences the caller’s state (stabilising vs destabilising)
+- Apply small directional changes (Δ) to the profile variables based on this effect
+- Even under high distress, allow slight improvements if the intervention is supportive
+- Avoid increasing distress or volatility unless there is clear evidence of escalation caused by the learner
+- Output MUST be in '{language}'
+
+INTERNAL (DO NOT OUTPUT):
+1) Assess intervention quality (e.g. empathy, guidance, pressure)
+2) Derive directional change per variable (↑ ↓ →)
+3) Apply bounded, gradual update
+
+OUTPUT:
+Return the updated profile in the required structured format.
+"""
+
+
+PROFILE_UPDATE_INPUT = """
 CURRENT PROFILE:
 - emotional_state: {emotional_state}
 - complexity: {complexity}
@@ -199,15 +263,4 @@ TURN:
 
 CONVERSATION:
 {formatted_history}
-
-RULES:
-- emotional_state may only move by one level from the current level
-- complexity may change by at most 1
-- volatility may change by at most 0.10
-- cooperativeness may change by at most 0.10
-- Keep values inside valid bounds
-- Prefer no change when evidence is weak
-
-OUTPUT:
-Return the updated profile in the required structured format.
 """

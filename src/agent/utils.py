@@ -1,12 +1,14 @@
 """Provide helper functions for training state formatting and profile setup."""
 
 import random
-from typing import Literal
+from typing import Literal, TypeVar
 
 from langchain_core.messages import AIMessage, HumanMessage, get_buffer_string
 
 from agent.schemas import CallerProfile
 from agent.state import TrainingState
+
+Number = TypeVar('Number', int, float)
 
 
 def parse_session_command(
@@ -104,3 +106,25 @@ def get_profile(difficulty: int) -> CallerProfile:
         volatility=round(volatility, 2),
         cooperativeness=round(cooperativeness, 2),
     )
+
+
+def clamp(value: Number, lower: Number, upper: Number) -> Number:
+    """Clamp value into the inclusive [lower, upper] range."""
+    return max(lower, min(upper, value))
+
+
+def bounded_step(current: Number, target: Number, max_delta: Number) -> Number:
+    """Move from current toward target by at most max_delta."""
+    if max_delta < 0:
+        raise ValueError('max_delta must be non-negative')
+    return clamp(target, current - max_delta, current + max_delta)
+
+
+def trim_recent_lines(text: str, max_lines: int) -> str:
+    """Return only the most recent max_lines from text."""
+    if max_lines < 0:
+        raise ValueError('max_lines must be non-negative')
+    lines = text.splitlines()
+    if len(lines) <= max_lines:
+        return text
+    return '\n'.join(lines[-max_lines:])
