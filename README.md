@@ -97,7 +97,7 @@ Runtime config is stored in `TrainingConfig` (`src/agent/schemas.py`):
 
 ## JWT Authentication and Admin Panel
 
-Docker Compose deployments are protected by `auth-gateway` (FastAPI) in front of `langgraph-api`.
+Docker Compose deployments are protected by `auth-gateway` (FastAPI) in front of `langgraph-api`, powered by the shared package [`langgraph-secure-gateway`](https://github.com/thwolter/langgraph-secure-gateway).
 
 - Login endpoint: `POST /auth/login` with JSON body `{ "username": "...", "password": "..." }`
 - Session endpoint: `GET /auth/me` with header `Authorization: Bearer <jwt>`
@@ -109,7 +109,7 @@ Create the initial admin user:
 
 ```bash
 docker compose exec -T auth-gateway \
-  python scripts/create_admin_user.py --username admin --password 'ChangeMe123!'
+  secure-langgraph create-admin-user --username admin --password 'ChangeMe123!'
 ```
 
 Then use:
@@ -136,7 +136,7 @@ docker compose up --build
 
 ```bash
 docker compose exec -T auth-gateway \
-  python scripts/create_admin_user.py --username admin --password 'ChangeMe123!'
+  secure-langgraph create-admin-user --username admin --password 'ChangeMe123!'
 ```
 
 4. Open Admin UI:

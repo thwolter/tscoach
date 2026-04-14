@@ -5,11 +5,7 @@ from __future__ import annotations
 import argparse
 import sys
 
-from sqlalchemy import select
-
-from agent.auth.db import SessionLocal
-from agent.auth.models import User
-from agent.auth.security import hash_password
+from langgraph_secure_gateway.auth_cli import create_or_update_admin_user
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -30,35 +26,13 @@ def main() -> int:
     parser = build_parser()
     args = parser.parse_args()
 
-    username = args.username.strip()
-    if not username:
-        parser.error("--username must not be empty")
+    action = create_or_update_admin_user(
+        username=args.username,
+        password=args.password,
+        inactive=args.inactive,
+    )
 
-    with SessionLocal() as session:
-        statement = select(User).where(User.username == username).limit(1)
-        user = session.execute(statement).scalar_one_or_none()
-
-        password_hash = hash_password(args.password)
-        is_active = not args.inactive
-
-        if user is None:
-            user = User(
-                username=username,
-                password_hash=password_hash,
-                is_admin=True,
-                is_active=is_active,
-            )
-            session.add(user)
-            action = "created"
-        else:
-            user.password_hash = password_hash
-            user.is_admin = True
-            user.is_active = is_active
-            action = "updated"
-
-        session.commit()
-
-    print(f"Admin user '{username}' {action}.")
+    print(f"Admin user '{args.username}' {action}.")
     return 0
 
 

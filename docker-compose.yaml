@@ -47,7 +47,7 @@ services:
           context: .
           dockerfile: Dockerfile
         image: "langgraph-app"
-        entrypoint: ["python", "-m", "uvicorn", "agent.gateway:app", "--host", "0.0.0.0", "--port", "8000"]
+        entrypoint: ["python", "-m", "uvicorn", "langgraph_secure_gateway.entrypoints:app", "--host", "0.0.0.0", "--port", "8000"]
         ports:
             - "8123:8000"
         depends_on:

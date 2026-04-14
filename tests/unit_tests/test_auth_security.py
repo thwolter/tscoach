@@ -1,13 +1,12 @@
 from __future__ import annotations
 
 import pytest
-
-from agent.auth.gateway_security import (
+from langgraph_secure_gateway.auth.gateway_security import (
     AuthError,
     authenticate_bearer_from_headers,
     extract_bearer_token,
 )
-from agent.auth.security import (
+from langgraph_secure_gateway.auth.security import (
     create_access_token,
     decode_access_token,
     hash_password,
