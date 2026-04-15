@@ -1372,8 +1372,8 @@ wheels = [
 
 [[package]]
 name = "langgraph-secure-gateway"
-version = "0.3.0"
-source = { git = "https://github.com/thwolter/langgraph-secure-gateway.git?rev=main#fc3f8579a1e3c442c3c0c9b9dbbd839183f5af93" }
+version = "0.4.0"
+source = { git = "https://github.com/thwolter/langgraph-secure-gateway.git?rev=main#b7df975abdea1b8b65f47e5242510a9b467431c4" }
 dependencies = [
     { name = "bcrypt" },
     { name = "fastapi" },
