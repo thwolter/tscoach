@@ -153,6 +153,7 @@ def caller_type_rules(
             )
 
         base += '- Behaviour should react to the learner’s tone (e.g. warmth → more openness, distance → more testing)\n'
+        return base
 
     if caller_type == CallerType.DISTRESSED:
         base = '- Focus on emotional burden and vulnerability\n'
