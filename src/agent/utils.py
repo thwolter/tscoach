@@ -5,7 +5,7 @@ from typing import Literal, TypeVar
 
 from langchain_core.messages import AIMessage, HumanMessage, get_buffer_string
 
-from agent.schemas import CallerProfile
+from agent.schemas import CallerProfile, EmotionalState
 from agent.state import TrainingState
 
 Number = TypeVar('Number', int, float)
@@ -90,7 +90,12 @@ def get_profile(difficulty: int) -> CallerProfile:
 
     # --- Emotional state (weakly coupled to difficulty)
     emotional_state = random.choices(
-        ['calm', 'mild distress', 'moderate distress', 'severe distress'],
+        [
+            EmotionalState.CALM,
+            EmotionalState.MILD_DISTRESS,
+            EmotionalState.MODERATE_DISTRESS,
+            EmotionalState.SEVERE_DISTRESS,
+        ],
         weights=[
             max(0.1, 1 - x),  # calm decreases with difficulty
             0.4,

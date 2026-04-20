@@ -10,8 +10,19 @@ from agent.prompts.simulation import (
     PHASE_DECISION,
     PROFILE_UPDATE_INPUT,
     PROFILE_UPDATE_SYSTEM,
+    caller_type_rules,
+    complexity_rules,
+    cooperativeness_rules,
+    emotional_state_rules,
+    state_delta_rules,
+    volatility_rules,
 )
-from agent.schemas import CallerProfile, CallerProfileUpdate, PhaseDecision
+from agent.schemas import (
+    CallerProfile,
+    CallerProfileUpdate,
+    EmotionalState,
+    PhaseDecision,
+)
 from agent.state import TrainingState
 from agent.utils import (
     bounded_step,
@@ -20,7 +31,12 @@ from agent.utils import (
     trim_recent_lines,
 )
 
-_EMOTIONAL_LEVELS = ['calm', 'mild distress', 'moderate distress', 'severe distress']
+_EMOTIONAL_LEVELS = [
+    EmotionalState.CALM,
+    EmotionalState.MILD_DISTRESS,
+    EmotionalState.MODERATE_DISTRESS,
+    EmotionalState.SEVERE_DISTRESS,
+]
 _PROFILE_HISTORY_MAX_LINES = 16
 
 
@@ -34,10 +50,10 @@ def _bounded_trait(current: float, target: float) -> float:
     return round(clamp(bounded_step(current, target, 0.10), 0.0, 1.0), 2)
 
 
-def _bounded_emotional_state(current: str, target: str) -> str:
+def _bounded_emotional_state(
+    current: EmotionalState, target: EmotionalState
+) -> EmotionalState:
     """Restrict emotional state transitions to at most one level."""
-    if current not in _EMOTIONAL_LEVELS or target not in _EMOTIONAL_LEVELS:
-        return current
     current_idx = _EMOTIONAL_LEVELS.index(current)
     target_idx = _EMOTIONAL_LEVELS.index(target)
     if target_idx > current_idx:
@@ -62,12 +78,18 @@ async def caller_simulation(state: TrainingState) -> dict:
 
     system_prompt = CALLER_SIMULATION.format(
         scenario_description=state.scenario.description,
+        caller_type_description=caller_type_rules(
+            state.scenario.caller_type, state.caller_profile
+        ),
+        emotional_state=emotional_state_rules(state.caller_profile.emotional_state),
+        complexity=complexity_rules(state.caller_profile.complexity),
+        volatility=volatility_rules(state.caller_profile.volatility),
+        cooperativeness=cooperativeness_rules(state.caller_profile.cooperativeness),
+        state_deltas=state_delta_rules(
+            prev=state.previous_caller_profile or state.caller_profile,
+            curr=state.caller_profile,
+        ),
         language=state.config.language,
-        caller_type=state.scenario.caller_type,
-        emotional_state=state.caller_profile.emotional_state,
-        complexity=state.caller_profile.complexity,
-        volatility=state.caller_profile.volatility,
-        cooperativeness=state.caller_profile.cooperativeness,
     )
 
     messages = [
@@ -96,7 +118,7 @@ async def update_caller_profile(state: TrainingState) -> dict:
     latest_evaluation = state.evaluations[-1] if state.evaluations else None
 
     update_msg = PROFILE_UPDATE_INPUT.format(
-        emotional_state=state.caller_profile.emotional_state,
+        emotional_state=state.caller_profile.emotional_state.value,
         complexity=state.caller_profile.complexity,
         volatility=state.caller_profile.volatility,
         cooperativeness=state.caller_profile.cooperativeness,
@@ -141,7 +163,10 @@ async def update_caller_profile(state: TrainingState) -> dict:
         ),
     )
 
-    return {'caller_profile': updated}
+    return {
+        'previous_caller_profile': current,
+        'caller_profile': updated,
+    }
 
 
 async def decide_phase(state: TrainingState) -> dict:
@@ -160,7 +185,7 @@ async def decide_phase(state: TrainingState) -> dict:
     system_prompt = PHASE_DECISION.format(
         scenario_description=state.scenario.description,
         language=state.config.language,
-        emotional_state=state.caller_profile.emotional_state,
+        emotional_state=state.caller_profile.emotional_state.value,
         volatility=state.caller_profile.volatility,
         cooperativeness=state.caller_profile.cooperativeness,
         phase=state.phase,

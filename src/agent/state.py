@@ -21,6 +21,7 @@ class TrainingState(BaseModel):
 
     scenario: Scenario | None = None
     caller_profile: CallerProfile | None = None
+    previous_caller_profile: CallerProfile | None = None
     config: TrainingConfig = Field(default_factory=TrainingConfig)
 
     messages: Annotated[list[AnyMessage], add_messages]

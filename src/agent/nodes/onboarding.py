@@ -16,11 +16,11 @@ DEFAULT_LANGUAGE = 'en'
 DEFAULT_MAX_TURNS = None
 DEFAULT_FEEDBACK_MODE = 'both'
 CALLER_TYPES: tuple[CallerType, ...] = (
-    'distressed',
-    'sexualised',
-    'complaining',
-    'hostile',
-    'manipulative',
+    CallerType.DISTRESSED,
+    CallerType.SEXUALISED,
+    CallerType.COMPLAINING,
+    CallerType.HOSTILE,
+    CallerType.MANIPULATIVE,
 )
 
 
@@ -70,7 +70,7 @@ async def scenario_setup(state: TrainingState) -> dict:
     create_scenario = SCENARIO_SETUP.format(
         category=category,
         difficulty=difficulty,
-        caller_type=caller_type,
+        caller_type=caller_type.value if caller_type else None,
     )
 
     messages = [
@@ -92,6 +92,7 @@ async def scenario_setup(state: TrainingState) -> dict:
     return {
         'scenario': scenario,
         'caller_profile': profile,
+        'previous_caller_profile': profile,
     }
 
 

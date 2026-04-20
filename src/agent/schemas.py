@@ -1,16 +1,28 @@
 """Schemas for the agent."""
 
+from enum import StrEnum
 from typing import Literal
 
 from pydantic import BaseModel, Field
 
-CallerType = Literal[
-    'distressed',
-    'sexualised',
-    'complaining',
-    'hostile',
-    'manipulative',
-]
+
+class CallerType(StrEnum):
+    """Behavioral archetype used to shape caller communication patterns."""
+
+    DISTRESSED = 'distressed'
+    SEXUALISED = 'sexualised'
+    COMPLAINING = 'complaining'
+    HOSTILE = 'hostile'
+    MANIPULATIVE = 'manipulative'
+
+
+class EmotionalState(StrEnum):
+    """Discrete emotional intensity level for the simulated caller."""
+
+    CALM = 'calm'
+    MILD_DISTRESS = 'mild distress'
+    MODERATE_DISTRESS = 'moderate distress'
+    SEVERE_DISTRESS = 'severe distress'
 
 
 class OnboardingSetup(BaseModel):
@@ -58,7 +70,7 @@ class Scenario(BaseModel):
 class CallerProfile(BaseModel):
     """Profile of the caller."""
 
-    emotional_state: str
+    emotional_state: EmotionalState
     complexity: int
     volatility: float
     cooperativeness: float
@@ -67,9 +79,7 @@ class CallerProfile(BaseModel):
 class CallerProfileUpdate(BaseModel):
     """Updated caller profile after considering recent dialog history."""
 
-    emotional_state: Literal[
-        'calm', 'mild distress', 'moderate distress', 'severe distress'
-    ]
+    emotional_state: EmotionalState
     complexity: int = Field(..., ge=1, le=5)
     volatility: float = Field(..., ge=0, le=1)
     cooperativeness: float = Field(..., ge=0, le=1)
