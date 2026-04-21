@@ -2,11 +2,13 @@
 
 ### BREAKING CHANGE
 
+- Docker deployments now rely on the external gateway used by `../agents`; set `GATEWAY_UPSTREAM_SECRET` and configure the gateway with this service as its upstream.
 - Changes in command parsing and session routing require updates in downstream workflows and state handling logic.
 - Changes in schema and logic require updates in downstream integrations for evaluation, onboarding, and simulation workflows.
 
 ### Feat
 
+- **auth**: trust the external gateway via upstream-secret headers
 - **simulation**: refine greeting logic for improved conversation flow
 - **session**: add `/end` command for session termination
 - **evaluation**: enhance prompts with feedback integration and adaptive coaching

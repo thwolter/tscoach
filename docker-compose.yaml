@@ -4,6 +4,7 @@ volumes:
 services:
     langgraph-redis:
         image: redis:6
+        restart: unless-stopped
         healthcheck:
             test: redis-cli ping
             interval: 5s
@@ -11,6 +12,7 @@ services:
             retries: 5
     langgraph-postgres:
         image: postgres:16
+        restart: unless-stopped
         environment:
             POSTGRES_DB: postgres
             POSTGRES_USER: postgres
@@ -25,47 +27,29 @@ services:
             interval: 5s
     langgraph-api:
         pull_policy: never
+        restart: unless-stopped
         build:
           context: .
           dockerfile: Dockerfile
         image: "langgraph-app"
+        expose:
+            - "8000"
         depends_on:
             langgraph-redis:
                 condition: service_healthy
             langgraph-postgres:
                 condition: service_healthy
+        healthcheck:
+            test: ["CMD", "python", "-c", "import socket; s=socket.create_connection(('127.0.0.1', 8000), timeout=3); s.close()"]
+            interval: 10s
+            timeout: 5s
+            retries: 10
+            start_period: 20s
         environment:
             FORWARDED_ALLOW_IPS: "*"
             REDIS_URI: redis://langgraph-redis:6379
             POSTGRES_URI: postgres://postgres:postgres@langgraph-postgres:5432/postgres?sslmode=disable
+            GATEWAY_UPSTREAM_SECRET: ${GATEWAY_UPSTREAM_SECRET:-}
             LANGSMITH_API_KEY: ${LANGSMITH_API_KEY}
+            LANGSMITH_PROJECT: ${LANGSMITH_PROJECT}
             OPENAI_API_KEY: ${OPENAI_API_KEY}
-    auth-gateway:
-        pull_policy: never
-        build:
-          context: .
-          dockerfile: Dockerfile
-        image: "langgraph-app"
-        entrypoint: ["python", "-m", "uvicorn", "langgraph_secure_gateway.entrypoints:app", "--host", "0.0.0.0", "--port", "8000"]
-        healthcheck:
-            test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/healthz', timeout=3).read()"]
-            interval: 10s
-            timeout: 5s
-            retries: 5
-            start_period: 10s
-        ports:
-            - "${AUTH_GATEWAY_HOST_PORT:-8123}:8000"
-        depends_on:
-            langgraph-api:
-                condition: service_started
-            langgraph-postgres:
-                condition: service_healthy
-        environment:
-            REDIS_URI: redis://langgraph-redis:6379
-            POSTGRES_URI: postgres://postgres:postgres@langgraph-postgres:5432/postgres?sslmode=disable
-            JWT_SECRET: ${JWT_SECRET}
-            JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
-            JWT_EXPIRE_MINUTES: ${JWT_EXPIRE_MINUTES:-60}
-            ADMIN_SESSION_SECRET: ${ADMIN_SESSION_SECRET}
-            AUTH_DB_AUTO_INIT: ${AUTH_DB_AUTO_INIT:-true}
-            LANGGRAPH_UPSTREAM_URL: http://langgraph-api:8000

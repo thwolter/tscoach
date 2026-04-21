@@ -56,13 +56,11 @@ Add at least:
 OPENAI_API_KEY=your_key_here
 ```
 
-Add authentication settings:
+For Docker deployments behind the external gateway, also set the shared upstream
+secret:
 
 ```env
-JWT_SECRET=your-long-random-secret
-ADMIN_SESSION_SECRET=your-admin-session-secret
-AUTH_DB_AUTO_INIT=true
-AUTH_GATEWAY_HOST_PORT=8123
+GATEWAY_UPSTREAM_SECRET=your-long-random-shared-secret
 ```
 
 Optional for tracing:
@@ -96,60 +94,34 @@ Runtime config is stored in `TrainingConfig` (`src/agent/schemas.py`):
 - `max_turns`: maximum conversation turns (default `3` in schema)
 - `feedback_mode`: `none`, `per_turn`, `final`, `both` (default `both`)
 
-## JWT Authentication and Admin Panel
+## Gateway Deployment
 
-Docker Compose deployments are protected by `auth-gateway` (FastAPI) in front of `langgraph-api`, powered by the shared package [`langgraph-secure-gateway`](https://github.com/thwolter/langgraph-secure-gateway).
+Authentication is handled by the external gateway, matching the setup in `../agents`.
 
-- Login endpoint: `POST /auth/login` with JSON body `{ "username": "...", "password": "..." }`
-- Session endpoint: `GET /auth/me` with header `Authorization: Bearer <jwt>`
-- Validation model: user passwords are stored as bcrypt hashes in Postgres.
-- Auth tables are auto-created by the gateway when `AUTH_DB_AUTO_INIT=true`.
-- JWTs are signed with backend-only `JWT_SECRET`.
-- Only `auth-gateway` should be exposed publicly by your platform ingress; `langgraph-api` stays internal.
+The LangGraph server requires requests to include the shared `GATEWAY_UPSTREAM_SECRET`
+that is injected by the gateway. Set the same strong value in this LangGraph
+deployment and in the gateway deployment.
 
-Create the initial admin user:
+The LangGraph `base_url` configured in the gateway admin panel must be reachable
+from the gateway container, for example a Coolify service URL or another internal
+HTTP endpoint. Redis and Postgres remain private; this compose file does not
+publish those service ports.
 
-```bash
-docker compose exec -T auth-gateway \
-  secure-langgraph create-admin-user --username admin --password 'ChangeMe123!'
-```
+Direct callers that do not know `GATEWAY_UPSTREAM_SECRET` are rejected by the
+LangGraph auth handler in `auth.py`.
 
-Then use:
-
-- `http://localhost:8123/admin` for SQLAdmin-based admin user and panel management.
-- The admin can create users, set/update user passwords, and assign panel access rows.
-
-To disable access, set `is_active=false` for the target user.
-
-## How To Use (Docker Auth Setup)
+## How To Use (Docker)
 
 1. Set env vars in `.env` (copy from `.env.example`), especially:
-   - `JWT_SECRET`
-   - `ADMIN_SESSION_SECRET`
-   - `JWT_ALGORITHM`
-   - `JWT_EXPIRE_MINUTES`
-   - `AUTH_DB_AUTO_INIT`
-   - `AUTH_GATEWAY_HOST_PORT`
+   - `LANGSMITH_API_KEY`
+   - `LANGSMITH_PROJECT`
+   - `OPENAI_API_KEY`
+   - `GATEWAY_UPSTREAM_SECRET`
 2. Start the stack:
 
 ```bash
 docker compose up --build
 ```
-
-3. Create the first admin user:
-
-```bash
-docker compose exec -T auth-gateway \
-  secure-langgraph create-admin-user --username admin --password 'ChangeMe123!'
-```
-
-4. Open Admin UI:
-   - `http://localhost:8123/admin/`
-
-5. Frontend login flow:
-   - Call `POST /auth/login` with `username` and `password`.
-   - Store returned `access_token` for the session.
-   - Send `Authorization: Bearer <access_token>` on API requests.
 
 ## Development
 
